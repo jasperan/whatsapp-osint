@@ -38,6 +38,19 @@ def goto_user(driver, target):
 		return
 '''
 
+def study_user(driver, user):
+	x_arg = '//span[contains(text(), \'{}\']'.format('online')
+	x_arg_test = '//span[@title=\'{}\']'.format('online')
+	print('Trying to find: {} in user {}'.format(x_arg_test, user))
+	while True:
+		try:
+			element = driver.find_element_by_xpath(x_arg_test)
+			print('Found element!')
+		except NoSuchElementException:
+			print('User is offline')
+		time.sleep(3)
+
+
 def inf_sleep():
 	while True:
 		time.sleep(1)
@@ -56,12 +69,15 @@ def whatsapp_login():
 
 def main():
 	print('Logging in...')
+	user = 'Dani Oracle'
 
 	print('Please, scan your QR code.')
 	driver = whatsapp_login()
-	goto_user(driver, 'Rodrigo Salgado') # testing
+	goto_user(driver, user) # testing
+	study_user(driver, user)
 	inf_sleep()
 
 
 if __name__ == '__main__':
 	main()
+
