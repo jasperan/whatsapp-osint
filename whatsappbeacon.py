@@ -12,43 +12,33 @@ import os
 import time
 
 
-def goto_user(driver, target):
+def study_user(driver, user):
+	# First, go to his/her chat
 	try:
 		# x_arg = '//span[@title={}]'.format(target)
-		x_arg = '//span[contains(text(), \'{}\')]'.format(target)
+		x_arg = '//span[contains(text(), \'{}\')]'.format(user)
 		print('Trying to find: {}'.format(x_arg))
 		element = driver.find_element_by_xpath(x_arg)
 		element.click()
 		print('Found and clicked!')
 	except NoSuchElementException:
-		print('Element is not found. Returning...')
+		print('{} is not found. Returning...'.format(user))
 		return
-		
-'''
-		input_box = browser.find_element_by_xpath('//*[@id="main"]/footer/div[1]/div[2]/div/div[2]')
-		for ch in message:
-			if ch == "\n":
-				ActionChains(browser).key_down(Keys.SHIFT).key_down(Keys.ENTER).key_up(Keys.ENTER).key_up(Keys.SHIFT).key_up(Keys.BACKSPACE).perform()
-			else:
-				input_box.send_keys(ch)
-		input_box.send_keys(Keys.ENTER)
-		print("Message sent successfuly")
-		time.sleep(1)
-	except NoSuchElementException:
-		return
-'''
 
-def study_user(driver, user):
-	x_arg = '//span[contains(text(), \'{}\']'.format('online')
-	x_arg_test = '//span[@title=\'{}\']'.format('online')
-	print('Trying to find: {} in user {}'.format(x_arg_test, user))
+	# Now, we continuously check for his/her online status:
+	x_arg = '//span[@title=\'{}\']'.format('online')
+	print('Trying to find: {} in user {}'.format(x_arg, user))
+	previous_state = 'OFFLINE' # by default, we consider the user to be offline.
 	while True:
 		try:
-			element = driver.find_element_by_xpath(x_arg_test)
-			print('Found element!')
+			element = driver.find_element_by_xpath(x_arg)
+			print('[ONLINE][{}] {}'.format(time.time(), user))
+			previous_state = 'ONLINE'
 		except NoSuchElementException:
-			print('User is offline')
-		time.sleep(3)
+			if previous_state == 'ONLINE':
+				print('[DISCONNECTED][{}] {}'.format(time.time(), user))
+				previous_state = 'OFFLINE'
+		time.sleep(1)
 
 
 def inf_sleep():
@@ -69,13 +59,11 @@ def whatsapp_login():
 
 def main():
 	print('Logging in...')
-	user = 'Dani Oracle'
+	user = 'David Oracle'
 
 	print('Please, scan your QR code.')
 	driver = whatsapp_login()
-	goto_user(driver, user) # testing
 	study_user(driver, user)
-	inf_sleep()
 
 
 if __name__ == '__main__':
