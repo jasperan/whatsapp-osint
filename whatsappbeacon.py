@@ -10,6 +10,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
 import os
 import time
+import math
+import datetime
 
 
 def study_user(driver, user):
@@ -27,17 +29,35 @@ def study_user(driver, user):
 
 	# Now, we continuously check for his/her online status:
 	x_arg = '//span[@title=\'{}\']'.format('online')
+	x_arg_typing = '//span[@title=\'{}\']'.format('typing...')
 	print('Trying to find: {} in user {}'.format(x_arg, user))
-	previous_state = 'OFFLINE' # by default, we consider the user to be offline.
+	previous_state = 'OFFLINE' # by default, we consider the user to be offline. The first time the user goes online,
+	first_online = time.time()
+	cumulative_session_time = 0
+	# it will be printed.
 	while True:
 		try:
 			element = driver.find_element_by_xpath(x_arg)
-			print('[ONLINE][{}] {}'.format(time.time(), user))
-			previous_state = 'ONLINE'
+			if previous_state == 'OFFLINE':
+				print('[{}][ONLINE] {}'.format(
+					datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+					user))
+				first_online = time.time()
+			previous_state = 'ONLINE'	
 		except NoSuchElementException:
 			if previous_state == 'ONLINE':
-				print('[DISCONNECTED][{}] {}'.format(time.time(), user))
+			# calculate approximate real time of WhatsApp being online
+				total_online_time = time.time() - first_online - 12 # approximately what it takes onPause to send signal
+				if total_online_time < 0: # This means that the user was typing instead of going offline.
+					continue # Skip the rest of this iteration. Do nothing.
+				cumulative_session_time += total_online_time
+				print('[{}][DISCONNECTED] {} was online for {} seconds. Session total: {} seconds'.format(
+					datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+					user,
+					math.floor(total_online_time),
+					math.floor(cumulative_session_time)))
 				previous_state = 'OFFLINE'
+
 		time.sleep(1)
 
 
@@ -59,7 +79,7 @@ def whatsapp_login():
 
 def main():
 	print('Logging in...')
-	user = 'Luis Lebron'
+	user = 'Rodrigo Salgado'
 
 	print('Please, scan your QR code.')
 	driver = whatsapp_login()
