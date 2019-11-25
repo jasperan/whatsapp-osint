@@ -29,7 +29,6 @@ def study_user(driver, user):
 
 	# Now, we continuously check for his/her online status:
 	x_arg = '//span[@title=\'{}\']'.format('online')
-	x_arg_typing = '//span[@title=\'{}\']'.format('typing...')
 	print('Trying to find: {} in user {}'.format(x_arg, user))
 	previous_state = 'OFFLINE' # by default, we consider the user to be offline. The first time the user goes online,
 	first_online = time.time()
