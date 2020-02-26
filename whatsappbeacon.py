@@ -78,7 +78,7 @@ def whatsapp_login():
 
 def main():
 	print('Logging in...')
-	user = 'Rodrigo Salgado'
+	user = 'Guille Tocayo Oracle'
 
 	print('Please, scan your QR code.')
 	driver = whatsapp_login()
