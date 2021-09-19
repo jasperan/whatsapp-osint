@@ -10,6 +10,7 @@ import os
 import time
 import math
 import datetime
+import argparse
 
 
 def study_user(driver, user):
@@ -75,8 +76,12 @@ def whatsapp_login():
 
 
 def main():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-u', '--username', help='Username to track', required=True)
+	args = parser.parse_args()
+
 	print('Logging in...')
-	user = 'Natalia'
+	user = args.username
 
 	print('Please, scan your QR code.')
 	driver = whatsapp_login()
