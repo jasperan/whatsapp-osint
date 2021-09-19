@@ -2,7 +2,7 @@
 
 Welcome to the first WhatsApp OSINT tool. This was developed in early 2019 but I decided to restart the project now for fun. 
 
-# How to Use
+# How to Install & Use
 
 First, install requirements:
 
@@ -14,3 +14,8 @@ pip install -r requirements.txt
 - You will need a GUI to execute the code since it interacts with web.whatsapp.com to get statuses
 - Replace the name in the file with whichever name you want to track
 
+# Credits
+
+This tool was developed by myself in my free time. It's a tool that demonstrates the power of Selenium and web scraping. I don't endorse using this tool for stalking people or any other fraudulent purposes. If you have suggestions on how to expand or improve the functionality, please submit a PR and I'll gladly review changes
+
+[jasperan](https://github.com/jasperan)
