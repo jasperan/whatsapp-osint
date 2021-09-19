@@ -1,5 +1,3 @@
-#!/usr/local/anaconda3/bin/python3
-
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -27,7 +25,7 @@ def study_user(driver, user):
 		print('{} is not found. Returning...'.format(user))
 		return
 
-	# Now, we continuously check for his/her online status:
+	# Now, we continuously check for their online status:
 	x_arg = '//span[@title=\'{}\']'.format('online')
 	print('Trying to find: {} in user {}'.format(x_arg, user))
 	previous_state = 'OFFLINE' # by default, we consider the user to be offline. The first time the user goes online,
@@ -78,7 +76,7 @@ def whatsapp_login():
 
 def main():
 	print('Logging in...')
-	user = 'Guille Tocayo Oracle'
+	user = 'Natalia'
 
 	print('Please, scan your QR code.')
 	driver = whatsapp_login()
