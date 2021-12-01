@@ -13,10 +13,21 @@ import datetime
 import argparse
 
 
+'''
+░█──░█ █──█ █▀▀█ ▀▀█▀▀ █▀▀ █▀▀█ █▀▀█ █▀▀█ 　 ░█▀▀▀█ ░█▀▀▀█ ▀█▀ ░█▄─░█ ▀▀█▀▀ 
+░█░█░█ █▀▀█ █▄▄█ ──█── ▀▀█ █▄▄█ █──█ █──█ 　 ░█──░█ ─▀▀▀▄▄ ░█─ ░█░█░█ ─░█── 
+░█▄▀▄█ ▀──▀ ▀──▀ ──▀── ▀▀▀ ▀──▀ █▀▀▀ █▀▀▀ 　 ░█▄▄▄█ ░█▄▄▄█ ▄█▄ ░█──▀█ ─░█── 
+
+░█▀▀█ ░█──░█ 　 ───░█ ─█▀▀█ ░█▀▀▀█ ░█▀▀█ ░█▀▀▀ ░█▀▀█ ─█▀▀█ ░█▄─░█ 
+░█▀▀▄ ░█▄▄▄█ 　 ─▄─░█ ░█▄▄█ ─▀▀▀▄▄ ░█▄▄█ ░█▀▀▀ ░█▄▄▀ ░█▄▄█ ░█░█░█ 
+░█▄▄█ ──░█── 　 ░█▄▄█ ░█─░█ ░█▄▄▄█ ░█─── ░█▄▄▄ ░█─░█ ░█─░█ ░█──▀█
+'''
+
+
+
 def study_user(driver, user):
 	# First, go to his/her chat
 	try:
-		# x_arg = '//span[@title={}]'.format(target)
 		x_arg = '//span[contains(text(), \'{}\')]'.format(user)
 		print('Trying to find: {}'.format(x_arg))
 		element = driver.find_element_by_xpath(x_arg)
@@ -41,7 +52,7 @@ def study_user(driver, user):
 					datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
 					user))
 				first_online = time.time()
-			previous_state = 'ONLINE'	
+				previous_state = 'ONLINE'	
 		except NoSuchElementException:
 			if previous_state == 'ONLINE':
 			# calculate approximate real time of WhatsApp being online
@@ -59,20 +70,22 @@ def study_user(driver, user):
 		time.sleep(1)
 
 
+
 def inf_sleep():
 	while True:
 		time.sleep(1)
 
 
+
 def whatsapp_login():
     driver = webdriver.Chrome()
-    # wait = WebDriverWait(browser, 600)
     driver.get('https://web.whatsapp.com')
     assert 'WhatsApp' in driver.title 
     driver.maximize_window()
     input('Scan the code and press any key...')
     print('QR scanned successfully!')
     return driver
+
 
 
 def main():
@@ -88,6 +101,6 @@ def main():
 	study_user(driver, user)
 
 
+
 if __name__ == '__main__':
 	main()
-
