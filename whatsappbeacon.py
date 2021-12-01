@@ -78,12 +78,14 @@ def inf_sleep():
 
 
 def whatsapp_login():
-    driver = webdriver.Chrome()
-    driver.get('https://web.whatsapp.com')
-    assert 'WhatsApp' in driver.title 
-    input('Scan the code and press any key...')
-    print('QR scanned successfully!')
-    return driver
+	options = webdriver.ChromeOptions()
+	options.add_experimental_option('excludeSwitches', ['enable-logging'])
+	driver = webdriver.Chrome(options=options)
+	driver.get('https://web.whatsapp.com')
+	assert 'WhatsApp' in driver.title 
+	input('Scan the code and press any key...')
+	print('QR scanned successfully!')
+	return driver
 
 
 
