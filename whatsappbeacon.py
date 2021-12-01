@@ -81,7 +81,6 @@ def whatsapp_login():
     driver = webdriver.Chrome()
     driver.get('https://web.whatsapp.com')
     assert 'WhatsApp' in driver.title 
-    driver.maximize_window()
     input('Scan the code and press any key...')
     print('QR scanned successfully!')
     return driver
