@@ -25,8 +25,8 @@ import argparse
 
 
 
-def study_user(driver, user):
-	# First, go to his/her chat
+def study_user(driver, user, language):
+	# First, go to their chat
 	try:
 		x_arg = '//span[contains(text(), \'{}\')]'.format(user)
 		print('Trying to find: {}'.format(x_arg))
@@ -37,8 +37,12 @@ def study_user(driver, user):
 		print('{} is not found. Returning...'.format(user))
 		return
 
+	x_arg = str()
 	# Now, we continuously check for their online status:
-	x_arg = '//span[@title=\'{}\']'.format('online')
+	if language == 'en':
+		x_arg = '//span[@title=\'{}\']'.format('online')
+	elif language == 'es':
+		x_arg = '//span[@title=\'{}\']'.format('en línea')
 	print('Trying to find: {} in user {}'.format(x_arg, user))
 	previous_state = 'OFFLINE' # by default, we consider the user to be offline. The first time the user goes online,
 	first_online = time.time()
@@ -92,14 +96,13 @@ def whatsapp_login():
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-u', '--username', help='Username to track', required=True)
+	parser.add_argument('-l', '--language', help='Language to use', required=True, choices=['en', 'es'])
 	args = parser.parse_args()
 
 	print('Logging in...')
-	user = args.username
-
 	print('Please, scan your QR code.')
 	driver = whatsapp_login()
-	study_user(driver, user)
+	study_user(driver, args.username, args.language)
 
 
 
