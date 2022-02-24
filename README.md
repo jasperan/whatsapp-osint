@@ -29,3 +29,8 @@ where language_code is either 'en' or 'es' for English and Spanish languages. Fu
 This tool was developed by myself in my free time. It's a tool that demonstrates the power of Selenium and web scraping. I don't endorse using this tool for stalking people or any other fraudulent purposes. If you have suggestions on how to expand or improve the functionality, please submit a PR and I'll gladly review changes
 
 [jasperan](https://github.com/jasperan)
+
+# Updates
+
+- Added support for Portuguese, French, Deutsch and Català.
+- Option implemented to stop tracking a user and change to another or to exit program. 
