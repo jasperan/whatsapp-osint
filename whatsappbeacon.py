@@ -1,4 +1,3 @@
-from http.client import CONTINUE
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -99,6 +98,7 @@ def menu():
 	if option == 1:
 		username = input('Introduce name of the user to track: ')
 	elif option == 2:
+		print('Finishing program...')
 		raise SystemExit(0)
 	else:
 		print('You have introduced a wrong option, try again')
@@ -129,13 +129,15 @@ def whatsapp_login():
 
 
 def main():
-	username = "Gloglito"
-	language = 'en'
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-u', '--username', help='Username to track', required=True)
+	parser.add_argument('-l', '--language', help='Language to use', required=True, choices=['en', 'es', 'fr', 'pt', 'de', 'cat'])
+	args = parser.parse_args()
 
 	print('Logging in...')
 	print('Please, scan your QR code.')
 	driver = whatsapp_login()
-	study_user(driver, username, language)
+	study_user(driver, args.username, args.language)
 
 
 
