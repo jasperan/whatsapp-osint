@@ -1,3 +1,4 @@
+from http.client import CONTINUE
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -17,11 +18,16 @@ import argparse
 ░█──░█ █──█ █▀▀█ ▀▀█▀▀ █▀▀ █▀▀█ █▀▀█ █▀▀█ 　 ░█▀▀▀█ ░█▀▀▀█ ▀█▀ ░█▄─░█ ▀▀█▀▀ 
 ░█░█░█ █▀▀█ █▄▄█ ──█── ▀▀█ █▄▄█ █──█ █──█ 　 ░█──░█ ─▀▀▀▄▄ ░█─ ░█░█░█ ─░█── 
 ░█▄▀▄█ ▀──▀ ▀──▀ ──▀── ▀▀▀ ▀──▀ █▀▀▀ █▀▀▀ 　 ░█▄▄▄█ ░█▄▄▄█ ▄█▄ ░█──▀█ ─░█── 
-
 ░█▀▀█ ░█──░█ 　 ───░█ ─█▀▀█ ░█▀▀▀█ ░█▀▀█ ░█▀▀▀ ░█▀▀█ ─█▀▀█ ░█▄─░█ 
 ░█▀▀▄ ░█▄▄▄█ 　 ─▄─░█ ░█▄▄█ ─▀▀▀▄▄ ░█▄▄█ ░█▀▀▀ ░█▄▄▀ ░█▄▄█ ░█░█░█ 
 ░█▄▄█ ──░█── 　 ░█▄▄█ ░█─░█ ░█▄▄▄█ ░█─── ░█▄▄▄ ░█─░█ ░█─░█ ░█──▀█
 '''
+
+
+
+def on_press(key):
+    print('{0} pressed'.format(
+        key))
 
 
 
@@ -39,10 +45,15 @@ def study_user(driver, user, language):
 
 	x_arg = str()
 	# Now, we continuously check for their online status:
-	if language == 'en':
+	if language == 'en' or language == 'de' or language == 'pt':
 		x_arg = '//span[@title=\'{}\']'.format('online')
 	elif language == 'es':
 		x_arg = '//span[@title=\'{}\']'.format('en línea')
+	elif language == 'fr':
+		x_arg = '//span[@title=\'{}\']'.format('en ligne')
+	elif language == 'cat':
+		x_arg = '//span[@title=\'{}\']'.format('en línia')
+
 	print('Trying to find: {} in user {}'.format(x_arg, user))
 	previous_state = 'OFFLINE' # by default, we consider the user to be offline. The first time the user goes online,
 	first_online = time.time()
@@ -57,6 +68,7 @@ def study_user(driver, user, language):
 					user))
 				first_online = time.time()
 				previous_state = 'ONLINE'	
+			
 		except NoSuchElementException:
 			if previous_state == 'ONLINE':
 			# calculate approximate real time of WhatsApp being online
@@ -71,9 +83,32 @@ def study_user(driver, user, language):
 					math.floor(cumulative_session_time)))
 				previous_state = 'OFFLINE'
 
+		leave_track = str(input('Type stop if you desire to change user to track or end program'))
+		if leave_track == 'stop':
+			
+			username = menu()
+			
+			study_user(driver, username, language)
+
 		time.sleep(1)
 
 
+def menu():
+	print_menu()
+	option = int(input('Enter your choice: '))
+	if option == 1:
+		username = input('Introduce name of the user to track: ')
+	elif option == 2:
+		raise SystemExit(0)
+	else:
+		print('You have introduced a wrong option, try again')
+		option = int(input('Enter your choice: '))
+
+	return username
+
+def print_menu():
+	print('1. Change user to track')
+	print('2. Exit program')	
 
 def inf_sleep():
 	while True:
@@ -94,15 +129,13 @@ def whatsapp_login():
 
 
 def main():
-	parser = argparse.ArgumentParser()
-	parser.add_argument('-u', '--username', help='Username to track', required=True)
-	parser.add_argument('-l', '--language', help='Language to use', required=True, choices=['en', 'es'])
-	args = parser.parse_args()
+	username = "Gloglito"
+	language = 'en'
 
 	print('Logging in...')
 	print('Please, scan your QR code.')
 	driver = whatsapp_login()
-	study_user(driver, args.username, args.language)
+	study_user(driver, username, language)
 
 
 
