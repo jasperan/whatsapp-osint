@@ -30,7 +30,7 @@ This tool was developed by myself in my free time. It's a tool that demonstrates
 
 [jasperan](https://github.com/jasperan)
 
-# UPDATES
+# Updates
 
 - Added support for Portuguese, French, Deutsch and Català.
 - Option implemented to stop tracking a user and change to another or to exit program. 
