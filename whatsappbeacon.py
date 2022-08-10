@@ -3,9 +3,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchWindowException
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import InvalidArgumentException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
+from utils.logs_manager import Logs
 import os
 import time
 import math
@@ -24,20 +27,21 @@ import argparse
 
 
 
-def on_press(key):
-    print('{0} pressed'.format(
-        key))
-
-
-
 def study_user(driver, user, language):
 	# First, go to their chat
 	try:
+		#We instantiate our Logs class, save current date and create a text file for the user
+		logs = Logs()
+		logs_date = datetime.datetime.now().strftime('%Y-%m-%d')
+		logs.create_log(user, logs_date)
+		print('There has been created in the folder ./logs a text file to log every connection and disconnection of the user {}'.format(user))
+		
 		x_arg = '//span[contains(text(), \'{}\')]'.format(user)
 		print('Trying to find: {}'.format(x_arg))
-		element = driver.find_element_by_xpath(x_arg)
+		element = driver.find_element(by=By.XPATH, value = x_arg)
 		element.click()
 		print('Found and clicked!')
+
 	except NoSuchElementException:
 		print('{} is not found. Returning...'.format(user))
 		return
@@ -54,17 +58,20 @@ def study_user(driver, user, language):
 		x_arg = '//span[@title=\'{}\']'.format('en línia')
 
 	print('Trying to find: {} in user {}'.format(x_arg, user))
+	
 	previous_state = 'OFFLINE' # by default, we consider the user to be offline. The first time the user goes online,
 	first_online = time.time()
 	cumulative_session_time = 0
 	# it will be printed.
 	while True:
 		try:
-			element = driver.find_element_by_xpath(x_arg)
+			element = driver.find_element(by=By.XPATH, value = x_arg)
 			if previous_state == 'OFFLINE':
-				print('[{}][ONLINE] {}'.format(
+				input = ('[{}][ONLINE] {}'.format(
 					datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
 					user))
+				print(input)
+				logs.update_log(input, user, logs_date)	
 				first_online = time.time()
 				previous_state = 'ONLINE'	
 			
@@ -75,56 +82,39 @@ def study_user(driver, user, language):
 				if total_online_time < 0: # This means that the user was typing instead of going offline.
 					continue # Skip the rest of this iteration. Do nothing.
 				cumulative_session_time += total_online_time
-				print('[{}][DISCONNECTED] {} was online for {} seconds. Session total: {} seconds'.format(
+				input = ('[{}][DISCONNECTED] {} was online for {} seconds. Session total: {} seconds'.format(
 					datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
 					user,
 					math.floor(total_online_time),
 					math.floor(cumulative_session_time)))
+				print(input)
+				logs.update_log(input, user, logs_date)	
 				previous_state = 'OFFLINE'
 
-		leave_track = str(input('Type stop if you desire to change user to track or end program'))
-		if leave_track == 'stop':
-			
-			username = menu()
-			
-			study_user(driver, username, language)
+		except NoSuchWindowException:
+			print('ERROR: Your WhatsApp window has been minimized or closed, try running the code again, shutting down...')
+			exit()
 
-		time.sleep(1)
-
-
-def menu():
-	print_menu()
-	option = int(input('Enter your choice: '))
-	if option == 1:
-		username = input('Introduce name of the user to track: ')
-	elif option == 2:
-		print('Finishing program...')
-		raise SystemExit(0)
-	else:
-		print('You have introduced a wrong option, try again')
-		option = int(input('Enter your choice: '))
-
-	return username
-
-def print_menu():
-	print('1. Change user to track')
-	print('2. Exit program')	
-
-def inf_sleep():
-	while True:
 		time.sleep(1)
 
 
 
 def whatsapp_login():
-	options = webdriver.ChromeOptions()
-	options.add_experimental_option('excludeSwitches', ['enable-logging'])
-	driver = webdriver.Chrome(options=options)
-	driver.get('https://web.whatsapp.com')
-	assert 'WhatsApp' in driver.title 
-	input('Scan the code and press any key...')
-	print('QR scanned successfully!')
-	return driver
+	try:
+		print('In order to make this program to work, you will need to log-in once in WhatsApp. After that, your session will be saved until you revoke it.')
+		options = webdriver.ChromeOptions()
+		options.add_argument("user-data-dir=C:\\Path")
+		options.add_experimental_option('excludeSwitches', ['enable-logging'])
+		driver = webdriver.Chrome(options=options)
+		driver.get('https://web.whatsapp.com')
+		assert 'WhatsApp' in driver.title 
+		input('Press any key when you are at the chat menu...')
+
+		return driver
+
+	except InvalidArgumentException:
+		print('ERROR: You may already have a Selenium navegator running in the background, close the window and run the code again, shutting down...')
+		exit()
 
 
 
@@ -134,8 +124,6 @@ def main():
 	parser.add_argument('-l', '--language', help='Language to use', required=True, choices=['en', 'es', 'fr', 'pt', 'de', 'cat'])
 	args = parser.parse_args()
 
-	print('Logging in...')
-	print('Please, scan your QR code.')
 	driver = whatsapp_login()
 	study_user(driver, args.username, args.language)
 
