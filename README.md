@@ -1,5 +1,13 @@
 # WhatsApp OSINT Tool
 
+## TikTok Intro (Spanish)
+
+https://user-images.githubusercontent.com/20752424/222984331-4928e06d-7da1-4521-8f2a-37cbb2a4f0cc.mp4
+
+Video credits go to [linkfydev](https://www.instagram.com/linkfydev/) (thanks for the awesome explanation).
+
+## Example
+
 ![example](./img/doc1.PNG?raw=true)
 
 Welcome to the first WhatsApp OSINT tool. This was developed in early 2019 but I decided to restart the project now for fun. 
