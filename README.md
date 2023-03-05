@@ -1,6 +1,6 @@
 # WhatsApp OSINT Tool
 
-## TikTok Intro (Spanish)
+## TikTok Tutorial (Spanish)
 
 https://user-images.githubusercontent.com/20752424/222984331-4928e06d-7da1-4521-8f2a-37cbb2a4f0cc.mp4
 
