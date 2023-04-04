@@ -8,7 +8,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import InvalidArgumentException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
-from utils.logs_manager import Logs
+from utils.database import Database
 import os
 import time
 import math
@@ -26,16 +26,10 @@ import argparse
 '''
 
 
-
 def study_user(driver, user, language):
 	# First, go to their chat
 	try:
 		#We instantiate our Logs class, save current date and create a text file for the user
-		logs = Logs()
-		logs_date = datetime.datetime.now().strftime('%Y-%m-%d')
-		logs.create_log(user, logs_date)
-		print('There has been created in the folder ./logs a text file to log every connection and disconnection of the user {}'.format(user))
-		
 		x_arg = '//span[contains(text(), \'{}\')]'.format(user)
 		print('Trying to find: {}'.format(x_arg))
 		element = driver.find_element(by=By.XPATH, value = x_arg)
@@ -70,15 +64,22 @@ def study_user(driver, user, language):
 				input = ('[{}][ONLINE] {}'.format(
 					datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
 					user))
+
 				print(input)
-				logs.update_log(input, user, logs_date)	
+				date = datetime.datetime.now().strftime('%Y-%m-%d')	
+				hour = datetime.datetime.now().strftime('%H')
+				minute = datetime.datetime.now().strftime('%M')
+				second = datetime.datetime.now().strftime('%S')
+				type_connection = 'CONNECTION'
+				
+				Database.insert_connection_data(user, date, hour, minute, second, type_connection)	
 				first_online = time.time()
 				previous_state = 'ONLINE'	
 			
 		except NoSuchElementException:
 			if previous_state == 'ONLINE':
 			# calculate approximate real time of WhatsApp being online
-				total_online_time = time.time() - first_online - 12 # approximately what it takes onPause to send signal
+				total_online_time = time.time() - first_online # approximately what it takes onPause to send signal
 				if total_online_time < 0: # This means that the user was typing instead of going offline.
 					continue # Skip the rest of this iteration. Do nothing.
 				cumulative_session_time += total_online_time
@@ -88,7 +89,14 @@ def study_user(driver, user, language):
 					math.floor(total_online_time),
 					math.floor(cumulative_session_time)))
 				print(input)
-				logs.update_log(input, user, logs_date)	
+				date = datetime.datetime.now().strftime('%Y-%m-%d')	
+				hour = datetime.datetime.now().strftime('%H')
+				minute = datetime.datetime.now().strftime('%M')
+				second = datetime.datetime.now().strftime('%S')
+				type_connection = "DISCONNECTION"
+				time_connected = total_online_time
+
+				Database.insert_disconnection_data(user, date, hour, minute, second, type_connection, time_connected)
 				previous_state = 'OFFLINE'
 
 		except NoSuchWindowException:
@@ -119,6 +127,9 @@ def whatsapp_login():
 
 
 def main():
+
+	Database.create_table()
+
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-u', '--username', help='Username to track', required=True)
 	parser.add_argument('-l', '--language', help='Language to use', required=True, choices=['en', 'es', 'fr', 'pt', 'de', 'cat'])
