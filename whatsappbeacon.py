@@ -30,9 +30,6 @@ def study_user(driver, user, language):
 	# First, go to their chat
 	try:
 		#We instantiate our Logs class, save current date and create a text file for the user
-		
-		print('There has been created in the folder ./logs a text file to log every connection and disconnection of the user {}'.format(user))
-		
 		x_arg = '//span[contains(text(), \'{}\')]'.format(user)
 		print('Trying to find: {}'.format(x_arg))
 		element = driver.find_element(by=By.XPATH, value = x_arg)
