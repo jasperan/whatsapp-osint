@@ -14,6 +14,7 @@ import time
 import math
 import datetime
 import argparse
+from db_to_excel import Converter
 
 
 '''
@@ -50,6 +51,8 @@ def study_user(driver, user, language):
 		x_arg = '//span[@title=\'{}\']'.format('en ligne')
 	elif language == 'cat':
 		x_arg = '//span[@title=\'{}\']'.format('en línia')
+	elif language == 'tr':
+		x_arg = '//span[@title=\'{}\']'.format('çevrimiçi')
 
 	print('Trying to find: {} in user {}'.format(x_arg, user))
 	
@@ -96,7 +99,7 @@ def study_user(driver, user, language):
 				type_connection = "DISCONNECTION"
 				time_connected = total_online_time
 
-				Database.insert_disconnection_data(user, date, hour, minute, second, type_connection, time_connected)
+				Database.insert_disconnection_data(user, date, hour, minute, second, type_connection,round(time_connected))
 				previous_state = 'OFFLINE'
 
 		except NoSuchWindowException:
@@ -132,12 +135,21 @@ def main():
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-u', '--username', help='Username to track', required=True)
-	parser.add_argument('-l', '--language', help='Language to use', required=True, choices=['en', 'es', 'fr', 'pt', 'de', 'cat'])
+	parser.add_argument('-l', '--language', help='Language to use', required=True, choices=['en', 'es', 'fr', 'pt', 'de', 'cat','tr'])
+	parser.add_argument('-e','--excel',help="Db to Excel Converter",required=False,action='store_true')
+
 	args = parser.parse_args()
+	if args.excel :
+		x = Converter()
+		x.db_to()
+		x.db_to_excel()
 
-	driver = whatsapp_login()
-	study_user(driver, args.username, args.language)
+		driver = whatsapp_login()
+		study_user(driver, args.username, args.language)
+	else:
 
+		driver = whatsapp_login()
+		study_user(driver, args.username, args.language)
 
 
 if __name__ == '__main__':
