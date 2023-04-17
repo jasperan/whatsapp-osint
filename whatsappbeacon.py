@@ -27,7 +27,17 @@ from db_to_excel import Converter
 '''
 
 
-def study_user(driver, user, language):
+def study_user(driver, user, language,excel):
+	# Create Excel File
+	if excel:
+		excel = Converter()
+
+		excel.db_to()
+		excel.db_to_excel()
+		print("\n Your Data Has Been Added to Excel File")
+	else:
+		pass
+
 	# First, go to their chat
 	try:
 		#We instantiate our Logs class, save current date and create a text file for the user
@@ -38,7 +48,7 @@ def study_user(driver, user, language):
 		print('Found and clicked!')
 
 	except NoSuchElementException:
-		print('{} is not found. Returning...'.format(user))
+		print('{} is not found. Returning...(Maybe your contact is in the archive. Check it)'.format(user))
 		return
 
 	x_arg = str()
@@ -139,17 +149,11 @@ def main():
 	parser.add_argument('-e','--excel',help="Db to Excel Converter",required=False,action='store_true')
 
 	args = parser.parse_args()
-	if args.excel :
-		x = Converter()
-		x.db_to()
-		x.db_to_excel()
 
-		driver = whatsapp_login()
-		study_user(driver, args.username, args.language)
-	else:
 
-		driver = whatsapp_login()
-		study_user(driver, args.username, args.language)
+	driver = whatsapp_login()
+	study_user(driver, args.username, args.language,args.excel)
+
 
 
 if __name__ == '__main__':
