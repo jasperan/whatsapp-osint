@@ -14,6 +14,7 @@ import time
 import math
 import datetime
 import argparse
+from db_to_excel import Converter
 
 
 '''
@@ -26,7 +27,17 @@ import argparse
 '''
 
 
-def study_user(driver, user, language):
+def study_user(driver, user, language,excel):
+	# Create Excel File
+	if excel:
+		excel = Converter()
+
+		excel.db_to()
+		excel.db_to_excel()
+		print("\n Your Data Has Been Added to Excel File")
+	else:
+		pass
+
 	# First, go to their chat
 	try:
 		#We instantiate our Logs class, save current date and create a text file for the user
@@ -37,7 +48,7 @@ def study_user(driver, user, language):
 		print('Found and clicked!')
 
 	except NoSuchElementException:
-		print('{} is not found. Returning...'.format(user))
+		print('{} is not found. Returning...(Maybe your contact is in the archive. Check it)'.format(user))
 		return
 
 	x_arg = str()
@@ -50,6 +61,8 @@ def study_user(driver, user, language):
 		x_arg = '//span[@title=\'{}\']'.format('en ligne')
 	elif language == 'cat':
 		x_arg = '//span[@title=\'{}\']'.format('en línia')
+	elif language == 'tr':
+		x_arg = '//span[@title=\'{}\']'.format('çevrimiçi')
 
 	print('Trying to find: {} in user {}'.format(x_arg, user))
 	
@@ -96,7 +109,7 @@ def study_user(driver, user, language):
 				type_connection = "DISCONNECTION"
 				time_connected = total_online_time
 
-				Database.insert_disconnection_data(user, date, hour, minute, second, type_connection, time_connected)
+				Database.insert_disconnection_data(user, date, hour, minute, second, type_connection,round(time_connected))
 				previous_state = 'OFFLINE'
 
 		except NoSuchWindowException:
@@ -132,11 +145,14 @@ def main():
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-u', '--username', help='Username to track', required=True)
-	parser.add_argument('-l', '--language', help='Language to use', required=True, choices=['en', 'es', 'fr', 'pt', 'de', 'cat'])
+	parser.add_argument('-l', '--language', help='Language to use', required=True, choices=['en', 'es', 'fr', 'pt', 'de', 'cat','tr'])
+	parser.add_argument('-e','--excel',help="Db to Excel Converter",required=False,action='store_true')
+
 	args = parser.parse_args()
 
+
 	driver = whatsapp_login()
-	study_user(driver, args.username, args.language)
+	study_user(driver, args.username, args.language,args.excel)
 
 
 
