@@ -56,8 +56,13 @@ def study_user(driver, user, language, excel):
 		x_arg = '//span[contains(text(), \'{}\')]'.format(user)
 		print('Trying to find: {}'.format(x_arg))
 		element = driver.find_element(by=By.XPATH, value = x_arg)
-		element.click()
-		print('Found and clicked!')
+		message_sent = False
+		while True:
+			element.click()
+			if message_sent == False:
+				print('Found and clicked!')
+				message_sent = True
+			time.sleep(10)
 
 	except NoSuchElementException:
 		print('{} is not found. Returning...(Maybe your contact is in the archive. Check it)'.format(user))
