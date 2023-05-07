@@ -15,6 +15,8 @@ import math
 import datetime
 import argparse
 from db_to_excel import Converter
+import threading
+
 
 
 '''
@@ -25,6 +27,16 @@ from db_to_excel import Converter
 ░█▀▀▄ ░█▄▄▄█ 　 ─▄─░█ ░█▄▄█ ─▀▀▀▄▄ ░█▄▄█ ░█▀▀▀ ░█▄▄▀ ░█▄▄█ ░█░█░█ 
 ░█▄▄█ ──░█── 　 ░█▄▄█ ░█─░█ ░█▄▄▄█ ░█─── ░█▄▄▄ ░█─░█ ░█─░█ ░█──▀█
 '''
+
+def remove_idle(driver):
+    while True:
+        time.sleep(10)
+        try:
+            smiley = driver.find_element(by=By.XPATH, value='//span[@data-testid="smiley"]')
+            smiley.click()
+        except NoSuchElementException:
+            print('Error: could not find smiley element')
+
 
 
 def study_user(driver, user, language, excel):
@@ -64,6 +76,10 @@ def study_user(driver, user, language, excel):
 		return
 
 	x_arg = str()
+
+	idle_thread = threading.Thread(target=remove_idle, args=(driver,), daemon=True)
+	idle_thread.start()
+
 	# Now, we continuously check for their online status:
 	if language == 'en' or language == 'de' or language == 'pt':
 		x_arg = '//span[@title=\'{}\']'.format('online')
@@ -128,8 +144,6 @@ def study_user(driver, user, language, excel):
 			print('ERROR: Your WhatsApp window has been minimized or closed, try running the code again, shutting down...')
 			exit()
 
-		time.sleep(1)
-
 
 
 def whatsapp_login():
@@ -157,6 +171,9 @@ def whatsapp_login():
 	except InvalidArgumentException:
 		print('ERROR: You may already have a Selenium navegator running in the background, close the window and run the code again, shutting down...')
 		exit()
+
+
+
 
 
 
