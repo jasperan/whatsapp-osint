@@ -81,16 +81,16 @@ def study_user(driver, user, language, excel):
 	idle_thread.start()
 
 	# Now, we continuously check for their online status:
-	if language == 'en' or language == 'de' or language == 'pt':
-		x_arg = '//span[@title=\'{}\']'.format('online')
-	elif language == 'es':
-		x_arg = '//span[@title=\'{}\']'.format('en línea')
-	elif language == 'fr':
-		x_arg = '//span[@title=\'{}\']'.format('en ligne')
-	elif language == 'cat':
-		x_arg = '//span[@title=\'{}\']'.format('en línia')
-	elif language == 'tr':
-		x_arg = '//span[@title=\'{}\']'.format('çevrimiçi')
+	translations = {
+	    'en': 'online',
+	    'es': 'en línea',
+	    'fr': 'en ligne',
+	    'cat': 'en línia',
+	    'tr': 'çevrimiçi'
+	}
+
+	x_arg = '//span[@title=\'{}\']'.format(translations.get(language, 'online'))
+
 
 	print('Trying to find: {} in user {}'.format(x_arg, user))
 	
