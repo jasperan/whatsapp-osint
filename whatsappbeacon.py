@@ -9,6 +9,7 @@ from selenium.common.exceptions import InvalidArgumentException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
 from utils.database import Database
+from time import sleep
 import os
 import time
 import math
@@ -196,12 +197,15 @@ def main():
 	parser.add_argument('-u', '--username', help='Username to track', required=True)
 	parser.add_argument('-l', '--language', help='Language to use', required=True, choices=['en', 'es', 'fr', 'pt', 'de', 'cat','tr'])
 	parser.add_argument('-e','--excel',help="Db to Excel Converter",required=False,action='store_true')
+	parser.add_argument('-s', '--split', help="change the prefix with which the spaces of the --username flag will be separated", required=False, default="-")
 
 	args = parser.parse_args()
 
+	user_name = " ".join(args.username.split(args.split))
 
 	driver = whatsapp_login()
-	study_user(driver, args.username, args.language,args.excel)
+	
+	study_user(driver, user_name, args.language,args.excel)
 
 
 
