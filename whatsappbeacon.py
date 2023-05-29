@@ -145,6 +145,32 @@ def study_user(driver, user, language, excel):
 			print('ERROR: Your WhatsApp window has been minimized or closed, try running the code again, shutting down...')
 			exit()
 
+def whatsapp_load(driver) -> None:
+		"""
+		The find_element method is used by means of which we are going to search for XPath "wa-web-loading-screen"
+		which is an html element which is present exclusively when the web.whatsapp.com is loading
+
+		Args:
+		- Driver of the web browser
+
+		Returns:
+		None
+
+		"""
+		while True:
+			try:
+				loading = driver.find_element(by=By.XPATH, value='//div[@data-testid="wa-web-loading-screen"]')
+				loading.click()
+				print("\n Loaded")
+				break
+			except Exception:
+				print("Loading...", end=f"\r")
+
+		while True:
+			try:
+				loading.click()
+			except Exception:
+				break
 
 
 def whatsapp_login():
@@ -164,8 +190,10 @@ def whatsapp_login():
 		options.add_experimental_option('excludeSwitches', ['enable-logging'])
 		driver = webdriver.Chrome(options=options)
 		driver.get('https://web.whatsapp.com')
-		assert 'WhatsApp' in driver.title 
-		input('Press any key when you are at the chat menu...')
+		assert 'WhatsApp' in driver.title
+
+		# Detects when you can search for the user that was introduced (the page was fully loaded)
+		whatsapp_load(driver=driver)
 
 		return driver
 
