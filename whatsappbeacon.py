@@ -66,9 +66,15 @@ def study_user(driver, user, language, excel):
 	# First, go to their chat
 	try:
 		#We instantiate our Logs class, save current date and create a text file for the user
-		x_arg = '//span[contains(text(), \'{}\')]'.format(user)
-		print('Trying to find: {}'.format(x_arg))
-		element = driver.find_element(by=By.XPATH, value = x_arg)
+		chat_icon = driver.find_element(by=By.CSS_SELECTOR, value = 'span[data-testid="chat"]')
+		chat_icon.click()
+		actions = ActionChains(driver)
+		actions.send_keys(user)
+		actions.perform()
+		sleep(1)
+		print('Trying to find: {}'.format(user))
+		span = "span[title='{}']".format(user)
+		element = driver.find_element(by=By.CSS_SELECTOR, value = span)
 		element.click()
 		print('Found and clicked!')
 
