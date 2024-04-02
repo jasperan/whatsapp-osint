@@ -169,8 +169,8 @@ def whatsapp_load(driver) -> None:
 				loading.click()
 				print("\n Loaded")
 				break
-			except Exception:
-				print("Loading...", end=f"\r")
+			except Exception as e:
+				print("Loading...: {}".format(e), end=f"\r")
 
 		while True:
 			try:
