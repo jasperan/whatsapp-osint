@@ -171,7 +171,7 @@ def whatsapp_load(driver) -> None:
 				print("\n Loaded")
 				break
 			except Exception as e:
-				print("Loading...: {}".format(e), end=f"\r")
+				print("Loading. Press F1 if stuck in this step...: {}".format(e), end=f"\r")
 				if keyboard.is_pressed('F1'):
 					break
 
