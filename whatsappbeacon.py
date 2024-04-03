@@ -17,6 +17,7 @@ import datetime
 import argparse
 from db_to_excel import Converter
 import threading
+import keyboard
 
 
 
@@ -171,6 +172,8 @@ def whatsapp_load(driver) -> None:
 				break
 			except Exception as e:
 				print("Loading...: {}".format(e), end=f"\r")
+				if keyboard.is_pressed('F1'):
+					break
 
 		while True:
 			try:
