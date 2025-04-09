@@ -6,12 +6,12 @@ class Database:
 
     @staticmethod
     def _get_connection():
-        """Devuelve una conexión a la base de datos."""
+        """Retrieves a connection to the SQLite database."""
         return sqlite3.connect(Database.DB_PATH)
 
     @staticmethod
     def create_tables():
-        """Crea las tablas Users y Sessions si no existen."""
+        """Creates the Users and Sessions tables if they do not exist."""
         with Database._get_connection() as conn:
             c = conn.cursor()
             # Tabla Users
@@ -46,7 +46,7 @@ class Database:
 
     @staticmethod
     def get_or_create_user(user_name: str) -> int:
-        """Obtiene o crea un usuario y devuelve su ID."""
+        """Gets the user ID if it exists, otherwise creates a new user and returns its ID."""
         with Database._get_connection() as conn:
             c = conn.cursor()
             c.execute('SELECT id FROM Users WHERE user_name = ?', (user_name,))
@@ -59,7 +59,7 @@ class Database:
 
     @staticmethod
     def insert_session_start(user_id: int, start_time: dict[str, str]) -> int:
-        """Inserta el inicio de una sesión y devuelve su ID."""
+        """Inserts a new session start into the Sessions table."""
         fields = ['user_id', 'start_date', 'start_hour', 'start_minute', 'start_second']
         values = (user_id, start_time['date'], start_time['hour'], start_time['minute'], start_time['second'])
         query = f'INSERT INTO Sessions ({", ".join(fields)}) VALUES (?, ?, ?, ?, ?)'

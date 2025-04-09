@@ -1,16 +1,15 @@
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchWindowException, NoSuchElementException, InvalidArgumentException
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from utils.database import Database
 from time import sleep
 import time
 import math
 import datetime
 import argparse
-import threading
 import keyboard
 from utils.db_to_excel import Converter
 
@@ -54,28 +53,31 @@ def check_online_status(driver, xpath):
     except NoSuchElementException:
         return False
 
-def remove_idle(driver):
-    """Avoids session to end"""
-    while True:
-        sleep(10)
-        try:
-            driver.find_element(by=By.XPATH, value='//span[@data-testid="smiley"]').click()
-        except NoSuchElementException:
-            print('Error: could not find smiley element')
-
 def find_user_chat(driver, user):
     """Search and goes to the user's chat"""
     try:
-        driver.find_element(by=By.CSS_SELECTOR, value='span[data-testid="chat"]').click()
+        # Search for the chat box
+        search_box = driver.find_element(by=By.XPATH, value='//*[@id="side"]/div[1]/div/div[2]/div/div/div[1]/p')
+        search_box.click()
+        
+        # Type the username into the search box
         actions = ActionChains(driver)
         actions.send_keys(user).perform()
-        sleep(1)
+
         print(f'Trying to find: {user}')
-        driver.find_element(by=By.CSS_SELECTOR, value=f"span[title='{user}']").click()
+        # Finds the first user in the search results
+        user_element = driver.find_element(by=By.XPATH, value='//*[@id="pane-side"]/div[1]/div/div/div[2]/div/div')
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="pane-side"]/div[1]/div/div/div[2]/div/div'))
+        )
+        user_element.click()
         print('Found and clicked!')
         return True
     except NoSuchElementException:
-        print(f'{user} is not found. Returning...(Maybe your contact is in the archive. Check it)')
+        print(f'{user} is not found. Returning...(Maybe your contact is in the archive or not in your chat list. Check it)')
+        return False
+    except Exception as e:
+        print(f"Error finding user {user}: {e}")
         return False
 
 def study_user(driver, user, language, excel):
@@ -95,8 +97,7 @@ def study_user(driver, user, language, excel):
 
     user_id = Database.get_or_create_user(user)
     xpath = f"//span[@title='{ONLINE_STATUS[language]}']"
-    idle_thread = threading.Thread(target=remove_idle, args=(driver,), daemon=True)
-    idle_thread.start()
+    print(f"Tracking {user}...")
 
     previous_state = 'OFFLINE'
     first_online = 0
@@ -129,15 +130,16 @@ def study_user(driver, user, language, excel):
 
 def whatsapp_load(driver):
     """Waits until Whatsapp Web fully loads."""
-    while True:
-        try:
-            driver.find_element(by=By.XPATH, value='//div[@data-testid="wa-web-loading-screen"]').click()
-            print("\nLoaded")
-            break
-        except Exception as e:
-            print(f"Loading. Press F1 if stuck in this step...: {e}", end="\r")
-            if keyboard.is_pressed('F1'):
-                break
+    try:
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="side"]/div[1]/div/div[2]/div/div/div[1]/p'))
+        )
+        print("\nLoaded")
+    except Exception as e:
+        print(f"Error loading WhatsApp Web: {e}")
+        print("Press F1 if stuck...")
+        if keyboard.is_pressed('F1'):
+            return
 
 def whatsapp_login():
     """Logs into Whatsapp Web and returns the driver"""
@@ -171,3 +173,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    #WebDriverWait(driver, 100).until(
+         #   EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div/div[3]/div/div[3]'))
+        #)
