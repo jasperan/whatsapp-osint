@@ -1,7 +1,7 @@
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 import sqlite3
-import os
+
 
 class Converter:
     DB_PATH = 'database/victims_logs.db'
