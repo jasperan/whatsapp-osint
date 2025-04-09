@@ -1,4 +1,5 @@
 import sqlite3
+from typing import Dict
 
 class Database:
     DB_PATH = 'database/victims_logs.db'
@@ -57,7 +58,7 @@ class Database:
             return c.lastrowid
 
     @staticmethod
-    def insert_session_start(user_id: int, start_time: Dict[str, str]) -> int:
+    def insert_session_start(user_id: int, start_time: dict[str, str]) -> int:
         """Inserta el inicio de una sesión y devuelve su ID."""
         fields = ['user_id', 'start_date', 'start_hour', 'start_minute', 'start_second']
         values = (user_id, start_time['date'], start_time['hour'], start_time['minute'], start_time['second'])
@@ -71,7 +72,7 @@ class Database:
 
     @staticmethod
     def update_session_end(session_id: int, end_time: Dict[str, str], time_connected: str):
-        """Actualiza una sesión con los datos de desconexión."""
+        
         query = '''
             UPDATE Sessions 
             SET end_date = ?, end_hour = ?, end_minute = ?, end_second = ?, time_connected = ?

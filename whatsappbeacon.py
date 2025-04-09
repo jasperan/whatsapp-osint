@@ -10,8 +10,6 @@ import time
 import math
 import datetime
 import argparse
-import sqlite3
-from typing import Dict, Optional
 import threading
 import keyboard
 from utils.db_to_excel import Converter
