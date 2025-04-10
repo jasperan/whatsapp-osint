@@ -1,25 +1,17 @@
 from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchWindowException
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import InvalidArgumentException
+from selenium.common.exceptions import NoSuchWindowException, NoSuchElementException, InvalidArgumentException
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from utils.database import Database
 from time import sleep
-import os
 import time
 import math
 import datetime
 import argparse
-from db_to_excel import Converter
-import threading
 import keyboard
-
-
+from utils.db_to_excel import Converter
 
 '''
 ░█──░█ █──█ █▀▀█ ▀▀█▀▀ █▀▀ █▀▀█ █▀▀█ █▀▀█ 　 ░█▀▀▀█ ░█▀▀▀█ ▀█▀ ░█▄─░█ ▀▀█▀▀ 
@@ -30,221 +22,158 @@ import keyboard
 ░█▄▄█ ──░█── 　 ░█▄▄█ ░█─░█ ░█▄▄▄█ ░█─── ░█▄▄▄ ░█─░█ ░█─░█ ░█──▀█
 '''
 
-def remove_idle(driver):
-    while True:
-        time.sleep(10)
-        try:
-            smiley = driver.find_element(by=By.XPATH, value='//span[@data-testid="smiley"]')
-            smiley.click()
-        except NoSuchElementException:
-            print('Error: could not find smiley element')
+# Dictionary for different languages
+ONLINE_STATUS = {
+    'en': 'online',
+    'de': 'online', 
+    'pt': 'online', 
+    'es': 'en línea',
+    'fr': 'en ligne', 
+    'cat': 'en línia', 
+    'tr': 'çevrimiçi'
+}
 
 
+def get_current_time_parts():
+    """Retrieves formatted time"""
+    now = datetime.datetime.now()
+    return {
+        'date': now.strftime('%Y-%m-%d'),
+        'hour': now.strftime('%H'),
+        'minute': now.strftime('%M'),
+        'second': now.strftime('%S'),
+        'formatted': now.strftime('%Y-%m-%d %H:%M:%S')
+    }
+
+def check_online_status(driver, xpath):
+    """Verifies if the user is online"""
+    try:
+        driver.find_element(by=By.XPATH, value=xpath)
+        return True
+    except NoSuchElementException:
+        return False
+
+def find_user_chat(driver, user):
+    """Search and goes to the user's chat"""
+    try:
+        # Search for the chat box
+        search_box = driver.find_element(by=By.XPATH, value='//*[@id="side"]/div[1]/div/div[2]/div/div/div[1]/p')
+        search_box.click()
+        
+        # Type the username into the search box
+        actions = ActionChains(driver)
+        actions.send_keys(user).perform()
+
+        print(f'Trying to find: {user}')
+        # Finds the first user in the search results
+        user_element = driver.find_element(by=By.XPATH, value='//*[@id="pane-side"]/div[1]/div/div/div[2]/div/div')
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="pane-side"]/div[1]/div/div/div[2]/div/div'))
+        )
+        user_element.click()
+        print('Found and clicked!')
+        return True
+    except NoSuchElementException:
+        print(f'{user} is not found. Returning...(Maybe your contact is in the archive or not in your chat list. Check it)')
+        return False
+    except Exception as e:
+        print(f"Error finding user {user}: {e}")
+        return False
 
 def study_user(driver, user, language, excel):
-	"""
-	Generates an excel file with user data and checks their online status.
+    """Tracks and stores users Whatsapp connections"""
+    if excel:
+        excel_converter = Converter()
+        excel_converter.db_to()
+        excel_converter.db_to_excel()
+        print("\nYour Data Has Been Added to Excel File")
 
-	Parameters:
-	driver (webdriver): Selenium webdriver instance.
-	user (str): The name of the user to study.
-	language (str): The language of the user's WhatsApp account.
-	excel (bool): Whether or not to generate an excel file.
+    if language not in ONLINE_STATUS:
+        print(f"Error: Language '{language}' not supported. Supported languages: {list(ONLINE_STATUS.keys())}")
+        return
 
-	Returns:
-	None
-	"""
-	# Create Excel File
-	if excel:
-		excel = Converter()
+    if not find_user_chat(driver, user):
+        return
 
-		excel.db_to()
-		excel.db_to_excel()
-		print("\n Your Data Has Been Added to Excel File")
-	else:
-		pass
+    user_id = Database.get_or_create_user(user)
+    xpath = f"//span[@title='{ONLINE_STATUS[language]}']"
+    print(f"Tracking {user}...")
 
-	# First, go to their chat
-	try:
-		#We instantiate our Logs class, save current date and create a text file for the user
-		chat_icon = driver.find_element(by=By.CSS_SELECTOR, value = 'span[data-testid="chat"]')
-		chat_icon.click()
-		actions = ActionChains(driver)
-		actions.send_keys(user)
-		actions.perform()
-		sleep(1)
-		print('Trying to find: {}'.format(user))
-		span = "span[title='{}']".format(user)
-		element = driver.find_element(by=By.CSS_SELECTOR, value = span)
-		element.click()
-		print('Found and clicked!')
+    previous_state = 'OFFLINE'
+    first_online = 0
+    cumulative_session_time = 0
+    current_session_id = None
 
-	except NoSuchElementException:
-		print('{} is not found. Returning...(Maybe your contact is in the archive. Check it)'.format(user))
-		return
+    while True:
+        try:
+            is_online = check_online_status(driver, xpath)
+            time_parts = get_current_time_parts()
 
-	x_arg = str()
+            if is_online and previous_state == 'OFFLINE':
+                print(f"[{time_parts['formatted']}][ONLINE] {user}")
+                current_session_id = Database.insert_session_start(user_id, time_parts)
+                first_online = time.time()
+                previous_state = 'ONLINE'
 
-	idle_thread = threading.Thread(target=remove_idle, args=(driver,), daemon=True)
-	idle_thread.start()
+            elif not is_online and previous_state == 'ONLINE':
+                total_online_time = time.time() - first_online
+                if total_online_time >= 0 and current_session_id:
+                    cumulative_session_time += total_online_time
+                    print(f"[{time_parts['formatted']}][DISCONNECTED] {user} was online for {math.floor(total_online_time)} seconds. Session total: {math.floor(cumulative_session_time)} seconds")
+                    Database.update_session_end(current_session_id, time_parts, str(round(total_online_time)))
+                    previous_state = 'OFFLINE'
+                    current_session_id = None
 
-	# Now, we continuously check for their online status:
-	if language == 'en' or language == 'de' or language == 'pt':
-		x_arg = '//span[@title=\'{}\']'.format('online')
-	elif language == 'es':
-		x_arg = '//span[@title=\'{}\']'.format('en línea')
-	elif language == 'fr':
-		x_arg = '//span[@title=\'{}\']'.format('en ligne')
-	elif language == 'cat':
-		x_arg = '//span[@title=\'{}\']'.format('en línia')
-	elif language == 'tr':
-		x_arg = '//span[@title=\'{}\']'.format('çevrimiçi')
+        except NoSuchWindowException:
+            print('ERROR: Your WhatsApp window has been minimized or closed, try running the code again, shutting down...')
+            return
 
-	print('Trying to find: {} in user {}'.format(x_arg, user))
-	
-	previous_state = 'OFFLINE' # by default, we consider the user to be offline. The first time the user goes online,
-	first_online = time.time()
-	cumulative_session_time = 0
-	# it will be printed.
-	while True:
-		try:
-			element = driver.find_element(by=By.XPATH, value = x_arg)
-			if previous_state == 'OFFLINE':
-				input = ('[{}][ONLINE] {}'.format(
-					datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-					user))
-
-				print(input)
-				date = datetime.datetime.now().strftime('%Y-%m-%d')	
-				hour = datetime.datetime.now().strftime('%H')
-				minute = datetime.datetime.now().strftime('%M')
-				second = datetime.datetime.now().strftime('%S')
-				type_connection = 'CONNECTION'
-				
-				Database.insert_connection_data(user, date, hour, minute, second, type_connection)	
-				first_online = time.time()
-				previous_state = 'ONLINE'	
-			
-		except NoSuchElementException:
-			if previous_state == 'ONLINE':
-			# calculate approximate real time of WhatsApp being online
-				total_online_time = time.time() - first_online # approximately what it takes onPause to send signal
-				if total_online_time < 0: # This means that the user was typing instead of going offline.
-					continue # Skip the rest of this iteration. Do nothing.
-				cumulative_session_time += total_online_time
-				input = ('[{}][DISCONNECTED] {} was online for {} seconds. Session total: {} seconds'.format(
-					datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-					user,
-					math.floor(total_online_time),
-					math.floor(cumulative_session_time)))
-				print(input)
-				date = datetime.datetime.now().strftime('%Y-%m-%d')	
-				hour = datetime.datetime.now().strftime('%H')
-				minute = datetime.datetime.now().strftime('%M')
-				second = datetime.datetime.now().strftime('%S')
-				type_connection = "DISCONNECTION"
-				time_connected = total_online_time
-
-				Database.insert_disconnection_data(user, date, hour, minute, second, type_connection,round(time_connected))
-				previous_state = 'OFFLINE'
-
-		except NoSuchWindowException:
-			print('ERROR: Your WhatsApp window has been minimized or closed, try running the code again, shutting down...')
-			exit()
-
-def whatsapp_load(driver) -> None:
-		"""
-		The find_element method is used by means of which we are going to search for XPath "wa-web-loading-screen"
-		which is an html element which is present exclusively when the web.whatsapp.com is loading
-
-		Args:
-		- Driver of the web browser
-
-		Returns:
-		None
-
-		"""
-		while True:
-			try:
-				loading = driver.find_element(by=By.XPATH, value='//div[@data-testid="wa-web-loading-screen"]')
-				loading.click()
-				print("\n Loaded")
-				break
-			except Exception as e:
-				print("Loading. Press F1 if stuck in this step...: {}".format(e), end=f"\r")
-				if keyboard.is_pressed('F1'):
-					break
-
-		while True:
-			try:
-				loading.click()
-			except Exception:
-				break
-
+def whatsapp_load(driver):
+    """Waits until Whatsapp Web fully loads."""
+    try:
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="side"]/div[1]/div/div[2]/div/div/div[1]/p'))
+        )
+        print("\nLoaded")
+    except Exception as e:
+        print(f"Error loading WhatsApp Web: {e}")
+        print("Press F1 if stuck...")
+        if keyboard.is_pressed('F1'):
+            return
 
 def whatsapp_login():
-	"""
-	Logs into WhatsApp Web using Selenium and returns the driver object.
-
-	Raises:
-	- InvalidArgumentException: If a Selenium navigator is already running in the background.
-
-	Returns:
-	- driver: A webdriver object with WhatsApp Web open and the user logged in.
-	"""
-	try:
-		print('In order to make this program to work, you will need to log-in once in WhatsApp. After that, your session will be saved until you revoke it.')
-		options = webdriver.ChromeOptions()
-		options.add_argument("user-data-dir=C:\\Path")
-		options.add_experimental_option('excludeSwitches', ['enable-logging'])
-		driver = webdriver.Chrome(options=options)
-		driver.get('https://web.whatsapp.com')
-		assert 'WhatsApp' in driver.title
-
-		# Detects when you can search for the user that was introduced (the page was fully loaded)
-		whatsapp_load(driver=driver)
-
-		return driver
-
-	except InvalidArgumentException:
-		print('ERROR: You may already have a Selenium navegator running in the background, close the window and run the code again, shutting down...')
-		exit()
-
-
-
-
-
+    """Logs into Whatsapp Web and returns the driver"""
+    try:
+        print('In order to make this program work, you will need to log in once in WhatsApp. After that, your session will be saved until you revoke it.')
+        options = webdriver.ChromeOptions()
+        options.add_argument("user-data-dir=C:\\Path")
+        options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        driver = webdriver.Chrome(options=options)
+        driver.get('https://web.whatsapp.com')
+        assert 'WhatsApp' in driver.title
+        whatsapp_load(driver)
+        return driver
+    except InvalidArgumentException:
+        print('ERROR: You may already have a Selenium navigator running in the background, close the window and run the code again, shutting down...')
+        exit()
 
 def main():
-	"""
-	This function creates a table in the database and parses command line arguments.
-	It then logs into WhatsApp and studies the specified user in the specified language.
-	If the excel flag is set, it converts the database to an Excel file.
+    """Main function that sets up and runs the program"""
+    Database.create_tables()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-u', '--username', help='Username to track', required=True)
+    parser.add_argument('-l', '--language', help='Language to use', required=True)
+    parser.add_argument('-e', '--excel', help="DB to Excel Converter", action='store_true')
+    parser.add_argument('-s', '--split', help="Change the prefix with which the spaces of the --username flag will be separated", default="-")
+    args = parser.parse_args()
 
-	Args:
-	None
-
-	Returns:
-	None
-	"""
-
-	Database.create_table()
-
-	parser = argparse.ArgumentParser()
-	parser.add_argument('-u', '--username', help='Username to track', required=True)
-	parser.add_argument('-l', '--language', help='Language to use', required=True, choices=['en', 'es', 'fr', 'pt', 'de', 'cat','tr'])
-	parser.add_argument('-e','--excel',help="Db to Excel Converter",required=False,action='store_true')
-	parser.add_argument('-s', '--split', help="change the prefix with which the spaces of the --username flag will be separated", required=False, default="-")
-
-	args = parser.parse_args()
-
-	user_name = " ".join(args.username.split(args.split))
-
-	driver = whatsapp_login()
-	
-	study_user(driver, user_name, args.language,args.excel)
-
-
+    user_name = " ".join(args.username.split(args.split))
+    driver = whatsapp_login()
+    study_user(driver, user_name, args.language, args.excel)
 
 if __name__ == '__main__':
-	main()
+    main()
+
+    #WebDriverWait(driver, 100).until(
+         #   EC.presence_of_element_located((By.XPATH, '//*[@id="app"]/div/div[3]/div/div[3]'))
+        #)
