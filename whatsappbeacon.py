@@ -29,6 +29,7 @@ ONLINE_STATUS = {
     'pt': 'online', 
     'es': 'en línea',
     'fr': 'en ligne', 
+    'it': 'in linea', 
     'cat': 'en línia', 
     'tr': 'çevrimiçi'
 }
