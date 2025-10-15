@@ -80,7 +80,8 @@ pip install -r requirements.txt
 ```
 
 - ✅ Necesitas **chromedriver**, o puedes modificar el código y usar GeckoDriver o cualquier otro controlador para Selenium.
-- ✅ Necesitarás una **GUI** para ejecutar el código, ya que interactúa con web.whatsapp.com para obtener estados.
+- ✅ Necesitarás una **GUI![1000157900](https://github.com/user-attachments/assets/ad2ae1b3-a621-4bfc-8a23-562d95f378ff)
+** para ejecutar el código, ya que interactúa con web.whatsapp.com para obtener estados.
 - ✅ Reemplaza el nombre en el archivo con el nombre que desees rastrear.
 
 ---
@@ -99,7 +100,7 @@ El lenguaje que escoja depende del **idioma** en el que usted tenga su WhatsApp 
 En el apartado de usuario deberá poner el usuario que desea hacer el seguimiento por medio del programa, así que la ejecución como tal quedaría de la siguiente manera:
 
 ```bash
-python3 whatsappbeacon.py --username <usuario> --language "<lenguaje_abreviatura>"
+python3 whatsappbeacon.py --username <Elizabeth Aguilar> --language es"<lenguaje_abreviatura>"
 ```
 
 ---
@@ -109,7 +110,7 @@ python3 whatsappbeacon.py --username <usuario> --language "<lenguaje_abreviatura
 Para obtener los datos generados por medio de Excel, puede ejecutar el siguiente comando con la **flag** `-e`:
 
 ```bash
-python3 whatsappbeacon.py --username <usuario> --language "<lenguaje_abreviatura>" -e
+python3 whatsappbeacon.py --username <Elizabeth Aguilar> --language es"<lenguaje_abreviatura>" -e
 ```
 
 ---
