@@ -30,9 +30,13 @@ The language you choose depends on the **language** in which you have your Whats
 
 | 🌐 Language | Code |
 |-------------|------|
-| 🇪🇸 Spanish  | es   |
 | 🇬🇧 English  | en   |
+| 🇩🇪 German   | de   |
+| 🇧🇷 Portuguese   | pt   |
+| 🇪🇸 Spanish  | es   |
 | 🇫🇷 French   | fr   |
+| 🇮🇹 Italian  | it   |
+|  Catalán | cat   |
 | 🇹🇷 Turkish  | tr   |
 
 In the user section, you must put the user you want to monitor through the program. The execution as such would be as follows:
