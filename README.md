@@ -103,7 +103,7 @@ El lenguaje que escoja depende del **idioma** en el que usted tenga su WhatsApp 
 En el apartado de usuario deberá poner el usuario que desea hacer el seguimiento por medio del programa, así que la ejecución como tal quedaría de la siguiente manera:
 
 ```bash
-python3 whatsappbeacon.py --username <usuario> --language "<lenguaje_abreviatura>"
+python3 whatsappbeacon.py --username <yulisa> --language "<lenguaje_abreviatura>"es
 ```
 
 ---
@@ -113,7 +113,7 @@ python3 whatsappbeacon.py --username <usuario> --language "<lenguaje_abreviatura
 Para obtener los datos generados por medio de Excel, puede ejecutar el siguiente comando con la **flag** `-e`:
 
 ```bash
-python3 whatsappbeacon.py --username <usuario> --language "<lenguaje_abreviatura>" -e
+python3 whatsappbeacon.py --username <522711422203> --language "<lenguaje_abreviatura>" -e
 ```
 
 ---
