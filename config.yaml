@@ -1,0 +1,8 @@
+username: ""
+language: "en"
+excel: false
+headless: false
+split_char: "-"
+browser: "chrome"  # Options: chrome, firefox, edge
+log_level: "INFO"
+data_dir: "data"

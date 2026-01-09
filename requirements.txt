@@ -1,3 +1,9 @@
 selenium
 openpyxl
 keyboard
+webdriver-manager
+pyyaml
+colorlog
+pytest
+pytest-mock
+coverage
