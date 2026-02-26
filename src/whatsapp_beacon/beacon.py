@@ -44,23 +44,34 @@ ONLINE_STATUS = {
 _LOGIN_READY_XPATHS = [
     '//div[@data-testid="chat-list"]',
     '//div[@aria-label="Chat list"]',
-    '//div[@data-testid="chat-list-search"]',
+    '//*[@id="side"]',
+    '//div[@role="textbox"][@data-tab="3"]',
     '//div[@contenteditable="true"][@data-tab="3"]',
-    '//*[@id="side"]/div[1]/div/div[2]/div/div/div[1]/p',
+    '//input[@role="searchbox"]',
 ]
 
 # XPath candidates for the search input box.
+# WhatsApp Web uses either a Lexical rich-text editor (div[role="textbox"])
+# or a native <input role="searchbox"> depending on the build.
 _SEARCH_BOX_XPATHS = [
+    # Lexical editor: role="textbox" with contenteditable, data-tab may be on same or parent element
+    '//div[@role="textbox"][@data-tab="3"]',
     '//div[@contenteditable="true"][@data-tab="3"]',
-    '//div[@data-testid="chat-list-search"]//div[@contenteditable="true"]',
-    '//div[@aria-label="Search or start new chat"]//div[@contenteditable="true"]',
-    '//div[@aria-label="Search or start new chat"]',
-    '//*[@id="side"]/div[1]/div/div[2]/div/div/div[1]/p',
+    '//div[@data-tab="3"]//div[@role="textbox"]',
+    '//div[@data-tab="3"]//div[@contenteditable="true"]',
+    # Native input variant (newer WhatsApp builds)
+    '//input[@role="searchbox"]',
+    '//div[@data-tab="5"]//input[@type="text"]',
+    # Broad fallbacks scoped to the side panel
+    '//*[@id="side"]//div[@role="textbox"][@contenteditable="true"]',
+    '//*[@id="side"]//input[@type="text"]',
 ]
 
 # XPath candidates for the first result in the search pane.
 _SEARCH_RESULT_XPATHS = [
     '//div[@data-testid="cell-frame-container"]',
+    '//div[@role="listitem"]',
+    '//*[@id="pane-side"]//div[@data-testid="cell-frame-container"]',
     '//*[@id="pane-side"]/div[1]/div/div/div[1]/div/div',
     '//*[@id="pane-side"]/div[1]/div/div/div[2]/div/div',
 ]
@@ -121,14 +132,22 @@ class WhatsAppBeacon:
 
             search_box = self.driver.find_element(By.XPATH, search_xpath)
             search_box.click()
-            time.sleep(0.3)
+            time.sleep(0.5)
 
-            # Clear any existing text then type the username
-            search_box.send_keys(Keys.CONTROL + 'a')
-            search_box.send_keys(Keys.DELETE)
-            ActionChains(self.driver).send_keys(user).perform()
+            is_native_input = search_box.tag_name == 'input'
+            if is_native_input:
+                # Native <input> element: use clear() + send_keys()
+                search_box.clear()
+                search_box.send_keys(user)
+            else:
+                # Contenteditable div (Lexical editor): select-all, delete, type
+                search_box.send_keys(Keys.CONTROL + 'a')
+                search_box.send_keys(Keys.DELETE)
+                time.sleep(0.2)
+                ActionChains(self.driver).send_keys(user).perform()
 
             logger.info(f'Trying to find: {user}')
+            time.sleep(1)  # allow search results to populate
 
             result_xpath = self._find_first_present(_SEARCH_RESULT_XPATHS, timeout=30)
             if not result_xpath:
