@@ -1,8 +1,8 @@
 # 🕵️‍♂️ WhatsApp Beacon (OSINT Tracker)
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8%2B-blue)
-![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)
+![Python](https://img.shields.io/badge/python-3.8%2B-blue?style=for-the-badge)
+![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey?style=for-the-badge)
 
 **WhatsApp Beacon** is a powerful, cross-platform OSINT tool designed to track the online status of WhatsApp users. It leverages Selenium and Web WhatsApp to monitor connectivity patterns and generate detailed logs and reports.
 
@@ -127,3 +127,12 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ## 🙌 Credits
 
 Original concept developed in 2019. Revamped in 2025 for better performance and usability.
+
+---
+
+<div align="center">
+
+[![GitHub](https://img.shields.io/badge/GitHub-jasperan-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/jasperan)&nbsp;
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-jasperan-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/jasperan/)
+
+</div>
