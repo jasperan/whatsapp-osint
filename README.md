@@ -10,6 +10,31 @@
 
 ---
 
+## Installation
+
+<!-- one-command-install -->
+> **One-command install** — clone, configure, and run in a single step:
+>
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/jasperan/whatsapp-osint/master/install.sh | bash
+> ```
+>
+> <details><summary>Advanced options</summary>
+>
+> Override install location:
+> ```bash
+> PROJECT_DIR=/opt/myapp curl -fsSL https://raw.githubusercontent.com/jasperan/whatsapp-osint/master/install.sh | bash
+> ```
+>
+> Or install manually:
+> ```bash
+> git clone https://github.com/jasperan/whatsapp-osint.git
+> cd whatsapp-osint
+> # See below for setup instructions
+> ```
+> </details>
+
+
 ## ✨ Features
 
 - **Cross-Platform**: Works seamlessly on Windows, Linux, and macOS.
