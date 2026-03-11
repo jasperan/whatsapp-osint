@@ -7,6 +7,9 @@ set -euo pipefail
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/jasperan/whatsapp-osint/master/install.sh | bash
+#
+# Override install location:
+#   PROJECT_DIR=/opt/myapp curl -fsSL ... | bash
 # ============================================================
 
 REPO_URL="https://github.com/jasperan/whatsapp-osint.git"
@@ -58,10 +61,10 @@ check_prereqs() {
     PYTHON=""
     for cmd in python3 python; do
         if command_exists "$cmd"; then
-            ver=$("$cmd" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null) || continue
+            ver=$("$cmd" -c 'import sys; v=sys.version_info; print(f"{v.major}.{v.minor}")' 2>/dev/null) || continue
             major=${ver%%.*}
             minor=${ver##*.}
-            if [ "$major" -ge 3 ] && [ "$minor" -ge 8 ]; then
+            if [ "$major" -gt 3 ] || { [ "$major" -eq 3 ] && [ "$minor" -ge 8 ]; }; then
                 PYTHON="$cmd"
                 break
             fi
@@ -73,13 +76,17 @@ check_prereqs() {
 
 install_deps() {
     cd "$INSTALL_DIR"
-    info "Creating virtual environment..."
-    $PYTHON -m venv .venv
+    if [ ! -d ".venv" ]; then
+        info "Creating virtual environment..."
+        $PYTHON -m venv .venv
+    else
+        info "Using existing virtual environment..."
+    fi
     # shellcheck disable=SC1091
     source .venv/bin/activate
 
     info "Installing dependencies..."
-    pip install --upgrade pip -q 2>/dev/null
+    pip install --upgrade pip -q
     pip install -r requirements.txt -q
     success "Dependencies installed"
 }
