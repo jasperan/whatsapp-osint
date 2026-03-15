@@ -10,6 +10,8 @@ def main():
     parser.add_argument('-l', '--language', help='Language code (en, es, etc.)')
     parser.add_argument('-e', '--excel', help="Export DB to Excel", action='store_true')
     parser.add_argument('--headless', help="Run in headless mode", action='store_true')
+    parser.add_argument('--chrome-driver-path', dest='chrome_driver_path',
+                        help="Path to chromedriver binary (default: auto-detect)")
     parser.add_argument('--config', help="Path to config file", default='config.yaml')
 
     args = parser.parse_args()

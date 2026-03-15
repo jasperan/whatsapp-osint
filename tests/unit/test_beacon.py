@@ -9,10 +9,9 @@ def mock_driver():
         yield mock
 
 @pytest.fixture
-def mock_webdriver_manager():
-    with patch('src.whatsapp_beacon.beacon.ChromeDriverManager') as mock:
-        mock.return_value.install.return_value = "/path/to/driver"
-        yield mock
+def mock_resolve_chromedriver():
+    with patch.object(WhatsAppBeacon, '_resolve_chromedriver_path', return_value="/path/to/driver"):
+        yield
 
 @pytest.fixture
 def config():
@@ -27,7 +26,7 @@ def test_beacon_init(config):
     assert beacon.driver is None
     assert beacon.config.username == "Test User"
 
-def test_setup_driver(config, mock_driver, mock_webdriver_manager):
+def test_setup_driver(config, mock_driver, mock_resolve_chromedriver):
     beacon = WhatsAppBeacon(config)
     beacon.setup_driver()
 
@@ -38,7 +37,7 @@ def test_setup_driver(config, mock_driver, mock_webdriver_manager):
     # We can't easily inspect C++ objects (ChromeOptions) deeply in mocks easily without more work,
     # but we verify the call happened.
 
-def test_whatsapp_login_headless(config, mock_driver, mock_webdriver_manager):
+def test_whatsapp_login_headless(config, mock_driver, mock_resolve_chromedriver):
     beacon = WhatsAppBeacon(config)
     beacon.setup_driver()
 
@@ -73,3 +72,17 @@ def test_check_online_status_false(config, mock_driver):
     beacon.driver.find_element.side_effect = NoSuchElementException("msg")
 
     assert beacon.check_online_status("//xpath") is False
+
+def test_resolve_chromedriver_explicit_path(config, tmp_path):
+    """Config chrome_driver_path takes priority when the file exists."""
+    fake_driver = tmp_path / "chromedriver"
+    fake_driver.touch()
+    config.config['chrome_driver_path'] = str(fake_driver)
+    beacon = WhatsAppBeacon(config)
+    assert beacon._resolve_chromedriver_path() == str(fake_driver)
+
+def test_resolve_chromedriver_falls_back_to_system(config):
+    """Falls back to system chromedriver on PATH when no config path is set."""
+    with patch('src.whatsapp_beacon.beacon.shutil.which', return_value="/usr/bin/chromedriver"):
+        beacon = WhatsAppBeacon(config)
+        assert beacon._resolve_chromedriver_path() == "/usr/bin/chromedriver"

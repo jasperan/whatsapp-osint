@@ -2,6 +2,7 @@ import time
 import math
 import datetime
 import logging
+import shutil
 from pathlib import Path
 import sys
 
@@ -18,7 +19,6 @@ from selenium.common.exceptions import (
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service as ChromeService
 
 from .database import Database
@@ -165,6 +165,37 @@ class WhatsAppBeacon:
             )
             return False
 
+    def _resolve_chromedriver_path(self):
+        """Resolve the ChromeDriver binary path.
+
+        Priority: config chrome_driver_path > system chromedriver on PATH >
+        webdriver-manager (fallback) > None (let Selenium find it).
+        """
+        # 1. Explicit path from config / CLI
+        configured = self.config.chrome_driver_path
+        if configured:
+            p = Path(configured)
+            if p.is_file():
+                return str(p)
+            logger.warning(f"Configured chrome_driver_path not found: {configured}")
+
+        # 2. System chromedriver already on PATH
+        system_driver = shutil.which("chromedriver")
+        if system_driver:
+            return system_driver
+
+        # 3. webdriver-manager as a fallback (may download an outdated version)
+        try:
+            from webdriver_manager.chrome import ChromeDriverManager
+            path = ChromeDriverManager().install()
+            logger.info("Fell back to webdriver-manager for ChromeDriver.")
+            return path
+        except Exception as e:
+            logger.warning(f"webdriver-manager failed: {e}")
+
+        # 4. Let Selenium's own discovery handle it
+        return None
+
     def setup_driver(self):
         """Sets up the Selenium driver."""
         logger.info("Setting up WebDriver...")
@@ -195,7 +226,12 @@ class WhatsAppBeacon:
         options.add_experimental_option("useAutomationExtension", False)
 
         try:
-            service = ChromeService(ChromeDriverManager().install())
+            driver_path = self._resolve_chromedriver_path()
+            if driver_path:
+                logger.info(f"Using ChromeDriver at: {driver_path}")
+                service = ChromeService(driver_path)
+            else:
+                service = ChromeService()
             self.driver = webdriver.Chrome(service=service, options=options)
             # Patch navigator.webdriver on every new document so it reads as undefined.
             self.driver.execute_cdp_cmd(

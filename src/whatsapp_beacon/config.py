@@ -19,7 +19,8 @@ class Config:
             'split_char': '-',
             'browser': 'chrome',
             'log_level': 'INFO',
-            'data_dir': 'data'
+            'data_dir': 'data',
+            'chrome_driver_path': None
         }
 
     def _load_from_file(self, filepath):
@@ -61,6 +62,9 @@ class Config:
 
     @property
     def data_dir(self): return self.config.get('data_dir')
+
+    @property
+    def chrome_driver_path(self): return self.config.get('chrome_driver_path')
 
     @property
     def log_level(self): return self.config.get('log_level')

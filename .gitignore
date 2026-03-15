@@ -164,3 +164,25 @@ test_*.db
 # Excel temporary files
 ~$*.xlsx
 *.xlsx#
+# Dogfood / QA output
+dogfood-output/
+.playwright-mcp/
+
+
+# OpenCode-generated documentation (local reference only)
+TESTING_REPORT.md
+AGENT_HARNESS_ANNEX.md
+SKILLS_EXECUTION_SUMMARY.md
+
+# Generated documentation
+docs/plans/
+docs/*.md
+!docs/README.md
+*_FEATURES.md
+*_ENHANCEMENTS.md
+*_REPORT.md
+
+# Auto-added by install-pre-commit-hooks.sh
+task_plan.md
+findings.md
+progress.md
