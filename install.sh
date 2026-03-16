@@ -91,11 +91,22 @@ install_deps() {
     success "Dependencies installed"
 }
 
+check_browser_binary() {
+    if command_exists google-chrome || command_exists google-chrome-stable || command_exists chromium || command_exists chromium-browser; then
+        success "Detected a local Chrome/Chromium browser binary"
+    else
+        warn "Chrome/Chromium was not found on PATH"
+        warn "Install Google Chrome or Chromium before running the tracker"
+        warn "If the browser is installed in a custom location, run with --chrome-binary-path /path/to/browser"
+    fi
+}
+
 main() {
     print_banner
     check_prereqs
     clone_repo
     install_deps
+    check_browser_binary
     print_done
 }
 

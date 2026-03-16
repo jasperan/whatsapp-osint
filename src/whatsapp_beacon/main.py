@@ -12,6 +12,8 @@ def main():
     parser.add_argument('--headless', help="Run in headless mode", action='store_true')
     parser.add_argument('--chrome-driver-path', dest='chrome_driver_path',
                         help="Path to chromedriver binary (default: auto-detect)")
+    parser.add_argument('--chrome-binary-path', dest='chrome_binary_path',
+                        help="Path to the Chrome/Chromium browser binary (default: auto-detect)")
     parser.add_argument('--config', help="Path to config file", default='config.yaml')
 
     args = parser.parse_args()

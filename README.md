@@ -61,6 +61,16 @@
    pip install -r requirements.txt
    ```
 
+3. **Make sure Chrome or Chromium is installed**:
+   `chromedriver` is handled automatically, but you still need a browser binary.
+   On most Linux systems, either of these is enough:
+   ```bash
+   google-chrome --version
+   # or
+   chromium --version
+   ```
+   If your browser lives in a non-standard path, pass it with `--chrome-binary-path /path/to/browser`.
+
 ---
 
 ## 🚀 Usage
@@ -81,6 +91,8 @@ python3 -m src.whatsapp_beacon.main -u "John Doe"
 | `-l`, `--language` | Language code of your WhatsApp Web interface (e.g., `en`, `es`, `fr`). | `en` |
 | `-e`, `--excel` | Export database logs to an Excel file on startup. | `False` |
 | `--headless` | Run in headless mode (no browser window). | `False` |
+| `--chrome-driver-path` | Path to the `chromedriver` binary. | Auto-detect |
+| `--chrome-binary-path` | Path to the Chrome/Chromium browser binary. | Auto-detect |
 | `--config` | Path to a custom configuration file. | `config.yaml` |
 
 ### Examples
@@ -109,6 +121,7 @@ excel: false
 browser: "chrome"
 log_level: "INFO"
 data_dir: "data"
+chrome_binary_path: null
 ```
 
 ---
@@ -130,6 +143,23 @@ When running in **Headless Mode** for the first time:
 4. The tool will detect the login and proceed.
 
 *Note: It is easier to run once in non-headless mode to authenticate, as the session is saved in `data/chrome_profile`.*
+
+---
+
+## 🔧 Troubleshooting
+
+### `cannot find Chrome binary`
+
+This means Selenium found `chromedriver`, but could not find the actual browser executable.
+
+Try this:
+
+```bash
+which google-chrome google-chrome-stable chromium chromium-browser
+python3 -m src.whatsapp_beacon.main -u "John Doe" --chrome-binary-path /full/path/to/browser
+```
+
+The tool now auto-detects common Chrome and Chromium locations on Linux/macOS, but the explicit flag is the escape hatch if your distro packages the browser somewhere unusual.
 
 ---
 

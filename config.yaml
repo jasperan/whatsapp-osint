@@ -6,3 +6,4 @@ split_char: "-"
 browser: "chrome"  # Options: chrome, firefox, edge
 log_level: "INFO"
 data_dir: "data"
+chrome_binary_path: null

@@ -169,7 +169,7 @@ class WhatsAppBeacon:
         """Resolve the ChromeDriver binary path.
 
         Priority: config chrome_driver_path > system chromedriver on PATH >
-        webdriver-manager (fallback) > None (let Selenium find it).
+        None (let Selenium Manager resolve a matching driver).
         """
         # 1. Explicit path from config / CLI
         configured = self.config.chrome_driver_path
@@ -184,16 +184,46 @@ class WhatsAppBeacon:
         if system_driver:
             return system_driver
 
-        # 3. webdriver-manager as a fallback (may download an outdated version)
-        try:
-            from webdriver_manager.chrome import ChromeDriverManager
-            path = ChromeDriverManager().install()
-            logger.info("Fell back to webdriver-manager for ChromeDriver.")
-            return path
-        except Exception as e:
-            logger.warning(f"webdriver-manager failed: {e}")
+        # 3. Let Selenium Manager resolve a compatible driver for the detected browser
+        return None
 
-        # 4. Let Selenium's own discovery handle it
+    def _resolve_chrome_binary_path(self):
+        """Resolve the Chrome/Chromium browser binary path.
+
+        Priority: config chrome_binary_path > common binaries on PATH >
+        common absolute install paths > None (let Selenium try auto-discovery).
+        """
+        configured = self.config.chrome_binary_path
+        if configured:
+            p = Path(configured)
+            if p.is_file():
+                return str(p)
+            logger.warning(f"Configured chrome_binary_path not found: {configured}")
+
+        binary_names = [
+            "google-chrome",
+            "google-chrome-stable",
+            "chromium",
+            "chromium-browser",
+            "chrome",
+        ]
+        for binary_name in binary_names:
+            binary_path = shutil.which(binary_name)
+            if binary_path:
+                return binary_path
+
+        common_paths = [
+            "/usr/bin/google-chrome",
+            "/usr/bin/google-chrome-stable",
+            "/usr/bin/chromium",
+            "/usr/bin/chromium-browser",
+            "/snap/bin/chromium",
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        ]
+        for candidate in common_paths:
+            if Path(candidate).is_file():
+                return candidate
+
         return None
 
     def setup_driver(self):
@@ -219,6 +249,11 @@ class WhatsAppBeacon:
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
 
+        browser_binary = self._resolve_chrome_binary_path()
+        if browser_binary:
+            logger.info(f"Using Chrome binary at: {browser_binary}")
+            options.binary_location = browser_binary
+
         # Remove Selenium fingerprints that WhatsApp (and other sites) detect.
         # Without these, WhatsApp Web detects automation and closes the connection.
         options.add_argument("--disable-blink-features=AutomationControlled")
@@ -239,7 +274,13 @@ class WhatsAppBeacon:
                 {"source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"},
             )
         except Exception as e:
-            logger.critical(f"Failed to initialize Chrome Driver: {e}")
+            if "cannot find chrome binary" in str(e).lower():
+                logger.critical(
+                    "Failed to initialize Chrome Driver: could not find a Chrome/Chromium browser binary. "
+                    "Install Google Chrome or Chromium, or pass --chrome-binary-path /path/to/browser."
+                )
+            else:
+                logger.critical(f"Failed to initialize Chrome Driver: {e}")
             sys.exit(1)
 
     def whatsapp_login(self):

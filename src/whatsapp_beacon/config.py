@@ -20,7 +20,8 @@ class Config:
             'browser': 'chrome',
             'log_level': 'INFO',
             'data_dir': 'data',
-            'chrome_driver_path': None
+            'chrome_driver_path': None,
+            'chrome_binary_path': None
         }
 
     def _load_from_file(self, filepath):
@@ -65,6 +66,9 @@ class Config:
 
     @property
     def chrome_driver_path(self): return self.config.get('chrome_driver_path')
+
+    @property
+    def chrome_binary_path(self): return self.config.get('chrome_binary_path')
 
     @property
     def log_level(self): return self.config.get('log_level')

@@ -86,3 +86,43 @@ def test_resolve_chromedriver_falls_back_to_system(config):
     with patch('src.whatsapp_beacon.beacon.shutil.which', return_value="/usr/bin/chromedriver"):
         beacon = WhatsAppBeacon(config)
         assert beacon._resolve_chromedriver_path() == "/usr/bin/chromedriver"
+
+
+def test_resolve_chromedriver_defers_to_selenium_manager(config):
+    """Uses Selenium Manager when there is no configured or system chromedriver."""
+    with patch('src.whatsapp_beacon.beacon.shutil.which', return_value=None):
+        beacon = WhatsAppBeacon(config)
+        assert beacon._resolve_chromedriver_path() is None
+
+
+def test_resolve_chrome_binary_explicit_path(config, tmp_path):
+    """Config chrome_binary_path takes priority when the file exists."""
+    fake_binary = tmp_path / "google-chrome"
+    fake_binary.touch()
+    fake_binary.chmod(0o755)
+    config.config['chrome_binary_path'] = str(fake_binary)
+    beacon = WhatsAppBeacon(config)
+    assert beacon._resolve_chrome_binary_path() == str(fake_binary)
+
+
+def test_resolve_chrome_binary_falls_back_to_chromium(config):
+    """Falls back to a Chromium binary when Google Chrome is not present."""
+    def fake_which(command):
+        mapping = {
+            'chromium': '/usr/bin/chromium',
+        }
+        return mapping.get(command)
+
+    with patch('src.whatsapp_beacon.beacon.shutil.which', side_effect=fake_which):
+        beacon = WhatsAppBeacon(config)
+        assert beacon._resolve_chrome_binary_path() == '/usr/bin/chromium'
+
+
+def test_setup_driver_uses_resolved_chrome_binary(config, mock_driver, mock_resolve_chromedriver):
+    beacon = WhatsAppBeacon(config)
+
+    with patch.object(WhatsAppBeacon, '_resolve_chrome_binary_path', return_value='/usr/bin/chromium'):
+        beacon.setup_driver()
+
+    options = mock_driver.call_args.kwargs['options']
+    assert options.binary_location == '/usr/bin/chromium'

@@ -9,6 +9,7 @@ class TestConfig:
         assert config.language == 'en'
         assert config.headless is False
         assert config.browser == 'chrome'
+        assert config.chrome_binary_path is None
 
     def test_load_from_file(self, tmp_path):
         config_file = tmp_path / "test_config.yaml"
