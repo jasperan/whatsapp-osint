@@ -1,5 +1,6 @@
 # 🕵️‍♂️ WhatsApp Beacon (OSINT Tracker)
 
+[![PyPI](https://img.shields.io/pypi/v/whatsapp-osint?style=for-the-badge&logo=pypi&logoColor=white)](https://pypi.org/project/whatsapp-osint/)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey?style=for-the-badge)
@@ -12,7 +13,8 @@
 
 ## ✨ Features
 
-- **One-command install**: clone, create a local `.venv`, install the package, and verify the browser setup.
+- **PyPI install**: `pip install whatsapp-osint` gets you the package fast.
+- **One-command installer**: clone, create a local `.venv`, install the package, and verify the browser setup.
 - **Best-effort Linux bootstrap**: if Git, Python, or Chrome/Chromium are missing, the installer will try to install them with `sudo`.
 - **Automated browser driver resolution**: Selenium Manager handles matching drivers, with manual override flags if you need them.
 - **Headless tracking**: authenticate once, then run quietly in the background.
@@ -24,7 +26,18 @@
 
 ## 🚀 Installation
 
-Use the one-click installer:
+### Install from PyPI
+
+```bash
+python3 -m pip install whatsapp-osint
+```
+
+The package installs 2 equivalent entry points:
+
+- `whatsapp-osint`
+- `whatsapp-beacon`
+
+### One-click installer from GitHub
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/jasperan/whatsapp-osint/master/install.sh | bash
@@ -55,8 +68,7 @@ cd whatsapp-osint
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip setuptools wheel
-python -m pip install -r requirements.txt
-python -m pip install -e .
+python -m pip install -e ".[dev]"
 ```
 
 </details>
@@ -65,7 +77,15 @@ python -m pip install -e .
 
 ## ▶️ Run it
 
-After the installer finishes:
+If you installed from PyPI:
+
+```bash
+whatsapp-osint -u "John Doe"
+```
+
+`whatsapp-osint` and `whatsapp-beacon` run the same CLI. The rest of the examples keep using `whatsapp-beacon`.
+
+If you used the GitHub installer:
 
 ```bash
 cd whatsapp-osint
@@ -138,19 +158,19 @@ The dashboard includes:
 
 ### First-run WhatsApp Web authentication flow
 
-![First-run WhatsApp Web authentication](assets/whatsapp-web-first-run.jpg)
+![First-run WhatsApp Web authentication](https://raw.githubusercontent.com/jasperan/whatsapp-osint/master/assets/whatsapp-web-first-run.jpg)
 
 ### Advanced analytics dashboard overview
 
 Captured from a demo dataset generated through the built-in analytics exporter.
 
-![Analytics dashboard overview](assets/analytics-dashboard-overview.jpg)
+![Analytics dashboard overview](https://raw.githubusercontent.com/jasperan/whatsapp-osint/master/assets/analytics-dashboard-overview.jpg)
 
 ### Advanced analytics dashboard filtered to a single contact
 
 Same dashboard, narrowed to one contact to show the live filter state.
 
-![Analytics dashboard filtered view](assets/analytics-dashboard-filtered.jpg)
+![Analytics dashboard filtered view](https://raw.githubusercontent.com/jasperan/whatsapp-osint/master/assets/analytics-dashboard-filtered.jpg)
 
 ---
 

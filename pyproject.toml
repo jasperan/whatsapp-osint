@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "whatsapp-osint"
+dynamic = ["version"]
+description = "Track WhatsApp Web presence sessions, export history, and generate analytics dashboards."
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.8"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "jasperan" }]
+keywords = ["whatsapp", "osint", "selenium", "analytics", "sqlite"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: Information Technology",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Internet",
+  "Topic :: Security",
+  "Topic :: Utilities",
+]
+dependencies = [
+  "selenium",
+  "openpyxl",
+  "keyboard",
+  "webdriver-manager",
+  "PyYAML",
+  "colorlog",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build",
+  "coverage",
+  "pytest",
+  "pytest-mock",
+  "twine",
+]
+
+[project.urls]
+Homepage = "https://github.com/jasperan/whatsapp-osint"
+Repository = "https://github.com/jasperan/whatsapp-osint"
+Issues = "https://github.com/jasperan/whatsapp-osint/issues"
+
+[project.scripts]
+whatsapp-beacon = "whatsapp_beacon.main:main"
+whatsapp-osint = "whatsapp_beacon.main:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+version = { attr = "whatsapp_beacon.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "unit: mark test as a unit test",
+  "integration: mark test as an integration test",
+  "slow: mark test as slow running",
+]

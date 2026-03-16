@@ -147,6 +147,13 @@ cython_debug/
 # Claude settings
 .claude/*
 
+# Local agent state
+.agents/
+.crush/
+.openhands/
+.pi/
+.serena/
+
 # OS files
 .DS_Store
 Thumbs.db
