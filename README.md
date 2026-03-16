@@ -4,114 +4,175 @@
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey?style=for-the-badge)
 
-**WhatsApp Beacon** is a powerful, cross-platform OSINT tool designed to track the online status of WhatsApp users. It leverages Selenium and Web WhatsApp to monitor connectivity patterns and generate detailed logs and reports.
+**WhatsApp Beacon** tracks when specific WhatsApp contacts go online and stores every completed session in SQLite. It can export to Excel, generate a polished analytics dashboard, and run fully headless once the session is authenticated.
 
 > **Disclaimer**: This tool is for educational and research purposes only. Do not use it for stalking or any illegal activities.
 
 ---
 
-## Installation
-
-<!-- one-command-install -->
-> **One-command install** — clone, configure, and run in a single step:
->
-> ```bash
-> curl -fsSL https://raw.githubusercontent.com/jasperan/whatsapp-osint/master/install.sh | bash
-> ```
->
-> <details><summary>Advanced options</summary>
->
-> Override install location:
-> ```bash
-> PROJECT_DIR=/opt/myapp curl -fsSL https://raw.githubusercontent.com/jasperan/whatsapp-osint/master/install.sh | bash
-> ```
->
-> Or install manually:
-> ```bash
-> git clone https://github.com/jasperan/whatsapp-osint.git
-> cd whatsapp-osint
-> # See below for setup instructions
-> ```
-> </details>
-
-
 ## ✨ Features
 
-- **Cross-Platform**: Works seamlessly on Windows, Linux, and macOS.
-- **Automated Driver Management**: No need to manually download `chromedriver`.
-- **Headless Mode**: Run in the background without a visible browser window.
-- **Detailed Logging**: Tracks online/offline events with precision.
-- **Data Export**: Export session logs to Excel for analysis.
-- **Configurable**: Use CLI arguments or a simple `config.yaml` file.
-- **Resilient**: Handles network interruptions and browser restarts.
+- **One-command install**: clone, create a local `.venv`, install the package, and verify the browser setup.
+- **Best-effort Linux bootstrap**: if Git, Python, or Chrome/Chromium are missing, the installer will try to install them with `sudo`.
+- **Automated browser driver resolution**: Selenium Manager handles matching drivers, with manual override flags if you need them.
+- **Headless tracking**: authenticate once, then run quietly in the background.
+- **SQLite session history**: every finished online session is stored locally.
+- **Excel export**: turn the database into `History_wp.xlsx`.
+- **Advanced analytics dashboard**: generate a static HTML report with filters, heatmaps, leaderboards, and recent-session views.
 
 ---
 
-## 🛠️ Installation
+## 🚀 Installation
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/jasperan/whatsapp-osint.git
-   cd whatsapp-osint
-   ```
-
-2. **Install dependencies**:
-   It is recommended to use a virtual environment.
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Make sure Chrome or Chromium is installed**:
-   `chromedriver` is handled automatically, but you still need a browser binary.
-   On most Linux systems, either of these is enough:
-   ```bash
-   google-chrome --version
-   # or
-   chromium --version
-   ```
-   If your browser lives in a non-standard path, pass it with `--chrome-binary-path /path/to/browser`.
-
----
-
-## 🚀 Usage
-
-You can run the tracker using command-line arguments or the configuration file.
-
-### Quick Start
+Use the one-click installer:
 
 ```bash
-python3 -m src.whatsapp_beacon.main -u "John Doe"
+curl -fsSL https://raw.githubusercontent.com/jasperan/whatsapp-osint/master/install.sh | bash
 ```
 
-### Command Line Arguments
+What it does:
+
+- clones or updates the repo into `./whatsapp-osint`
+- creates `./whatsapp-osint/.venv`
+- installs the package and the `whatsapp-beacon` command
+- on Linux, uses `sudo` when needed to install missing system packages and Chrome/Chromium
+- verifies that a browser binary is available before it finishes
+
+If you want a custom location:
+
+```bash
+PROJECT_DIR=/opt/whatsapp-osint curl -fsSL https://raw.githubusercontent.com/jasperan/whatsapp-osint/master/install.sh | bash
+```
+
+<details>
+<summary>Manual / development install</summary>
+
+Use this only if you explicitly want to manage setup yourself.
+
+```bash
+git clone https://github.com/jasperan/whatsapp-osint.git
+cd whatsapp-osint
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install -r requirements.txt
+python -m pip install -e .
+```
+
+</details>
+
+---
+
+## ▶️ Run it
+
+After the installer finishes:
+
+```bash
+cd whatsapp-osint
+source .venv/bin/activate
+whatsapp-beacon -u "John Doe"
+```
+
+If you do not want to activate the venv first:
+
+```bash
+./whatsapp-osint/.venv/bin/whatsapp-beacon -u "John Doe"
+```
+
+### First run
+
+The first run must authenticate with WhatsApp Web.
+
+- **Non-headless** is the easiest path. Scan the QR code once, then the saved browser profile will be reused.
+- **Headless** also works. If the session is not authenticated yet, the tool will save a QR screenshot to `qrcode.png`.
+
+Example:
+
+```bash
+whatsapp-beacon -u "Maria" --headless
+```
+
+---
+
+## 📊 Advanced analytics
+
+Generate a static HTML dashboard from the collected SQLite history:
+
+```bash
+whatsapp-beacon --analytics
+```
+
+By default, the report is written to:
+
+```text
+analytics/index.html
+```
+
+Custom output path:
+
+```bash
+whatsapp-beacon --analytics --analytics-output reports/contact-dashboard.html
+```
+
+Once generated, open it in your browser:
+
+```bash
+xdg-open analytics/index.html
+# or on macOS
+open analytics/index.html
+```
+
+The dashboard includes:
+
+- top-level KPIs
+- per-contact leaderboard
+- daily online-time bars
+- weekday/hour heatmap
+- duration distribution
+- recent sessions and longest sessions tables
+- live filtering by contact inside the page
+
+---
+
+## 🖼️ Screenshots
+
+### First-run WhatsApp Web authentication flow
+
+![First-run WhatsApp Web authentication](assets/whatsapp-web-first-run.jpg)
+
+### Advanced analytics dashboard overview
+
+Captured from a demo dataset generated through the built-in analytics exporter.
+
+![Analytics dashboard overview](assets/analytics-dashboard-overview.jpg)
+
+### Advanced analytics dashboard filtered to a single contact
+
+Same dashboard, narrowed to one contact to show the live filter state.
+
+![Analytics dashboard filtered view](assets/analytics-dashboard-filtered.jpg)
+
+---
+
+## ⚙️ Command line arguments
 
 | Argument | Description | Default |
 |----------|-------------|---------|
-| `-u`, `--username` | The exact WhatsApp username (as saved in your contacts) to track. | Required |
-| `-l`, `--language` | Language code of your WhatsApp Web interface (e.g., `en`, `es`, `fr`). | `en` |
-| `-e`, `--excel` | Export database logs to an Excel file on startup. | `False` |
-| `--headless` | Run in headless mode (no browser window). | `False` |
-| `--chrome-driver-path` | Path to the `chromedriver` binary. | Auto-detect |
-| `--chrome-binary-path` | Path to the Chrome/Chromium browser binary. | Auto-detect |
-| `--config` | Path to a custom configuration file. | `config.yaml` |
-
-### Examples
-
-**Track a user with Spanish WhatsApp Web in Headless mode:**
-```bash
-python3 -m src.whatsapp_beacon.main -u "Maria" -l es --headless
-```
-
-**Export data to Excel:**
-```bash
-python3 -m src.whatsapp_beacon.main -u "John Doe" -e
-```
+| `-u`, `--username` | Exact WhatsApp contact name to track. | Required for tracking |
+| `-l`, `--language` | WhatsApp Web language code (`en`, `es`, `fr`, etc.). | `en` |
+| `-e`, `--excel` | Export the database to Excel before doing anything else. | `False` |
+| `--headless` | Run without a visible browser window. | `False` |
+| `--chrome-driver-path` | Explicit path to `chromedriver`. | Auto-detect |
+| `--chrome-binary-path` | Explicit path to Chrome or Chromium. | Auto-detect |
+| `--analytics` | Generate the analytics dashboard and exit. | `False` |
+| `--analytics-output` | Output path for the analytics HTML report. | `analytics/index.html` |
+| `--config` | Path to a custom config file. | `config.yaml` |
 
 ---
 
 ## ⚙️ Configuration
 
-You can permanently set your preferences in `config.yaml`:
+You can keep defaults in `config.yaml`:
 
 ```yaml
 username: "Target Name"
@@ -126,23 +187,13 @@ chrome_binary_path: null
 
 ---
 
-## 📊 Output
+## 📦 Output
 
-- **Logs**: Saved to `logs/whatsapp_beacon.log` and displayed in the console.
-- **Database**: All sessions are stored in `data/victims_logs.db`.
-- **Excel**: Exported reports are saved as `History_wp.xlsx` (configurable path in code).
-
----
-
-## 🤖 Headless Mode & Authentication
-
-When running in **Headless Mode** for the first time:
-1. The tool will attempt to log in.
-2. If not authenticated, it will save a screenshot of the QR code to `qrcode.png`.
-3. Open `qrcode.png` and scan it with your phone's WhatsApp.
-4. The tool will detect the login and proceed.
-
-*Note: It is easier to run once in non-headless mode to authenticate, as the session is saved in `data/chrome_profile`.*
+- **Logs**: `logs/whatsapp_beacon.log`
+- **Database**: `data/victims_logs.db`
+- **Excel export**: `History_wp.xlsx`
+- **Analytics report**: `analytics/index.html` by default
+- **Saved WhatsApp profile**: `data/chrome_profile`
 
 ---
 
@@ -150,28 +201,38 @@ When running in **Headless Mode** for the first time:
 
 ### `cannot find Chrome binary`
 
-This means Selenium found `chromedriver`, but could not find the actual browser executable.
+The installer now tries to fix this automatically on Linux. If your distro keeps the browser in a weird place, launch with an explicit path:
 
-Try this:
+```bash
+whatsapp-beacon -u "John Doe" --chrome-binary-path /full/path/to/browser
+```
+
+Useful checks:
 
 ```bash
 which google-chrome google-chrome-stable chromium chromium-browser
-python3 -m src.whatsapp_beacon.main -u "John Doe" --chrome-binary-path /full/path/to/browser
+whatsapp-beacon --help
 ```
 
-The tool now auto-detects common Chrome and Chromium locations on Linux/macOS, but the explicit flag is the escape hatch if your distro packages the browser somewhere unusual.
+### `Username is required`
+
+Tracking mode needs a contact name:
+
+```bash
+whatsapp-beacon -u "John Doe"
+```
+
+Analytics mode does not:
+
+```bash
+whatsapp-beacon --analytics
+```
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Contributions are welcome. Fork it, build what you need, and send a PR.
 
 ---
 
