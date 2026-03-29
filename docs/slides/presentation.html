@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Beacon - OSINT Presence Tracker</title>
+
+    <!-- Fonts: Clash Display + Satoshi from Fontshare -->
+    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@400;500;600;700&f[]=satoshi@400;500;700&display=swap">
+
+    <style>
+        /* ===========================================
+           CSS CUSTOM PROPERTIES (NEON CYBER THEME)
+           =========================================== */
+        :root {
+            /* Colors */
+            --bg-primary: #0a0f1c;
+            --bg-secondary: #0d1428;
+            --bg-card: rgba(13, 20, 40, 0.8);
+            --text-primary: #ffffff;
+            --text-secondary: #8892b0;
+            --accent: #00ff41;
+            --accent-glow: rgba(0, 255, 65, 0.3);
+            --accent-secondary: #ffb000;
+            --accent-secondary-glow: rgba(255, 176, 0, 0.3);
+            --accent-danger: #ff0044;
+            --accent-cyan: #00d4ff;
+            --border-subtle: rgba(0, 255, 65, 0.15);
+            --border-glow: rgba(0, 255, 65, 0.4);
+
+            /* Typography - MUST use clamp() */
+            --font-display: 'Clash Display', sans-serif;
+            --font-body: 'Satoshi', sans-serif;
+            --title-size: clamp(2rem, 6vw, 5rem);
+            --h2-size: clamp(1.25rem, 3.5vw, 2.5rem);
+            --h3-size: clamp(1rem, 2.5vw, 1.75rem);
+            --subtitle-size: clamp(0.875rem, 2vw, 1.25rem);
+            --body-size: clamp(0.75rem, 1.5vw, 1.125rem);
+            --small-size: clamp(0.65rem, 1vw, 0.875rem);
+            --code-size: clamp(0.65rem, 1.1vw, 0.95rem);
+
+            /* Spacing - MUST use clamp() */
+            --slide-padding: clamp(1.5rem, 4vw, 4rem);
+            --content-gap: clamp(0.5rem, 2vw, 2rem);
+            --element-gap: clamp(0.25rem, 1vw, 1rem);
+
+            /* Animation */
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration-normal: 0.6s;
+        }
+
+        /* ===========================================
+           BASE RESET
+           =========================================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===========================================
+           VIEWPORT FITTING: MANDATORY BASE STYLES
+           Include this ENTIRE file in every presentation.
+           These styles ensure slides fit exactly in the viewport.
+           =========================================== */
+
+        /* 1. Lock html/body to viewport */
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        html {
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
+        /* 2. Each slide = exact viewport height */
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* 3. Content container with flex for centering */
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-height: 100%;
+            overflow: hidden;
+            padding: var(--slide-padding);
+        }
+
+        /* 4. ALL typography uses clamp() for responsive scaling */
+        /* (Already defined in :root above) */
+
+        /* 5. Cards/containers use viewport-relative max sizes */
+        .card, .container, .content-box {
+            max-width: min(90vw, 1000px);
+            max-height: min(80vh, 700px);
+        }
+
+        /* 6. Lists auto-scale with viewport */
+        .feature-list, .bullet-list {
+            gap: clamp(0.4rem, 1vh, 1rem);
+        }
+
+        .feature-list li, .bullet-list li {
+            font-size: var(--body-size);
+            line-height: 1.4;
+        }
+
+        /* 7. Grids adapt to available space */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+            gap: clamp(0.5rem, 1.5vw, 1rem);
+        }
+
+        /* 8. Images constrained to viewport */
+        img, .image-container {
+            max-width: 100%;
+            max-height: min(50vh, 400px);
+            object-fit: contain;
+        }
+
+        /* ===========================================
+           RESPONSIVE BREAKPOINTS
+           Aggressive scaling for smaller viewports
+           =========================================== */
+
+        /* Short viewports (< 700px height) */
+        @media (max-height: 700px) {
+            :root {
+                --slide-padding: clamp(0.75rem, 3vw, 2rem);
+                --content-gap: clamp(0.4rem, 1.5vw, 1rem);
+                --title-size: clamp(1.25rem, 4.5vw, 2.5rem);
+                --h2-size: clamp(1rem, 3vw, 1.75rem);
+            }
+        }
+
+        /* Very short viewports (< 600px height) */
+        @media (max-height: 600px) {
+            :root {
+                --slide-padding: clamp(0.5rem, 2.5vw, 1.5rem);
+                --content-gap: clamp(0.3rem, 1vw, 0.75rem);
+                --title-size: clamp(1.1rem, 4vw, 2rem);
+                --body-size: clamp(0.7rem, 1.2vw, 0.95rem);
+            }
+
+            .nav-dots, .keyboard-hint, .decorative {
+                display: none;
+            }
+        }
+
+        /* Extremely short (landscape phones, < 500px height) */
+        @media (max-height: 500px) {
+            :root {
+                --slide-padding: clamp(0.4rem, 2vw, 1rem);
+                --title-size: clamp(1rem, 3.5vw, 1.5rem);
+                --h2-size: clamp(0.9rem, 2.5vw, 1.25rem);
+                --body-size: clamp(0.65rem, 1vw, 0.85rem);
+            }
+        }
+
+        /* Narrow viewports (< 600px width) */
+        @media (max-width: 600px) {
+            :root {
+                --title-size: clamp(1.25rem, 7vw, 2.5rem);
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===========================================
+           REDUCED MOTION
+           Respect user preferences
+           =========================================== */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+
+            html {
+                scroll-behavior: auto;
+            }
+        }
+
+        /* ===========================================
+           NEON CYBER BACKGROUND EFFECTS
+           Grid patterns, surveillance aesthetic, data streams
+           =========================================== */
+        .slide {
+            background: var(--bg-primary);
+        }
+
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .slide-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===========================================
+           TYPOGRAPHY
+           =========================================== */
+        h1, h2, h3 {
+            font-family: var(--font-display);
+            font-weight: 600;
+            line-height: 1.1;
+        }
+
+        h1 { font-size: var(--title-size); }
+        h2 { font-size: var(--h2-size); }
+        h3 { font-size: var(--h3-size); }
+
+        p, li {
+            font-family: var(--font-body);
+            font-size: var(--body-size);
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .accent { color: var(--accent); }
+        .accent-amber { color: var(--accent-secondary); }
+        .accent-cyan { color: var(--accent-cyan); }
+        .accent-red { color: var(--accent-danger); }
+
+        .glow-text {
+            text-shadow: 0 0 20px var(--accent-glow), 0 0 40px var(--accent-glow);
+        }
+
+        .glow-amber {
+            text-shadow: 0 0 20px var(--accent-secondary-glow), 0 0 40px var(--accent-secondary-glow);
+        }
+
+        /* ===========================================
+           ANIMATIONS
+           Trigger via .visible class (added by JS on scroll)
+           =========================================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity var(--duration-normal) var(--ease-out-expo),
+                        transform var(--duration-normal) var(--ease-out-expo);
+        }
+
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: opacity var(--duration-normal) var(--ease-out-expo),
+                        transform var(--duration-normal) var(--ease-out-expo);
+        }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity var(--duration-normal) var(--ease-out-expo),
+                        transform var(--duration-normal) var(--ease-out-expo);
+        }
+
+        .reveal-blur {
+            opacity: 0;
+            filter: blur(10px);
+            transition: opacity 0.8s var(--ease-out-expo),
+                        filter 0.8s var(--ease-out-expo);
+        }
+
+        .slide.visible .reveal,
+        .slide.visible .reveal-left,
+        .slide.visible .reveal-scale,
+        .slide.visible .reveal-blur {
+            opacity: 1;
+            transform: translateY(0) translateX(0) scale(1);
+            filter: blur(0);
+        }
+
+        /* Stagger children for sequential reveal */
+        .reveal:nth-child(1), .reveal-left:nth-child(1), .reveal-scale:nth-child(1) { transition-delay: 0.1s; }
+        .reveal:nth-child(2), .reveal-left:nth-child(2), .reveal-scale:nth-child(2) { transition-delay: 0.2s; }
+        .reveal:nth-child(3), .reveal-left:nth-child(3), .reveal-scale:nth-child(3) { transition-delay: 0.3s; }
+        .reveal:nth-child(4), .reveal-left:nth-child(4), .reveal-scale:nth-child(4) { transition-delay: 0.4s; }
+        .reveal:nth-child(5), .reveal-left:nth-child(5), .reveal-scale:nth-child(5) { transition-delay: 0.5s; }
+        .reveal:nth-child(6), .reveal-left:nth-child(6), .reveal-scale:nth-child(6) { transition-delay: 0.6s; }
+
+        /* ===========================================
+           PROGRESS BAR
+           =========================================== */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+            box-shadow: 0 0 10px var(--accent-glow);
+            z-index: 1000;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        /* ===========================================
+           NAVIGATION DOTS
+           =========================================== */
+        .nav-dots {
+            position: fixed;
+            right: clamp(0.5rem, 2vw, 1.5rem);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: clamp(4px, 0.6vh, 8px);
+            z-index: 1000;
+        }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 1px solid var(--accent);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0;
+        }
+
+        .nav-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .nav-dot:hover {
+            background: rgba(0, 255, 65, 0.5);
+        }
+
+        /* ===========================================
+           SLIDE COUNTER
+           =========================================== */
+        .slide-counter {
+            position: fixed;
+            top: clamp(0.5rem, 2vw, 1.5rem);
+            right: clamp(0.5rem, 2vw, 1.5rem);
+            font-family: var(--font-body);
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            z-index: 1000;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .slide-counter .current {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* ===========================================
+           TITLE SLIDE
+           =========================================== */
+        .title-slide .slide-content {
+            align-items: center;
+            text-align: center;
+            gap: var(--content-gap);
+        }
+
+        .title-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: clamp(0.3rem, 0.8vw, 0.6rem);
+            padding: clamp(0.3rem, 0.6vw, 0.5rem) clamp(0.8rem, 1.5vw, 1.2rem);
+            border: 1px solid var(--border-subtle);
+            border-radius: 100px;
+            font-size: var(--small-size);
+            color: var(--accent);
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        .title-badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; box-shadow: 0 0 4px var(--accent-glow); }
+            50% { opacity: 0.4; box-shadow: none; }
+        }
+
+        .title-main {
+            max-width: min(90vw, 900px);
+        }
+
+        .title-main h1 {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .title-sub {
+            font-size: var(--subtitle-size);
+            color: var(--text-secondary);
+            max-width: min(80vw, 600px);
+        }
+
+        .title-meta {
+            display: flex;
+            gap: clamp(1rem, 3vw, 2rem);
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+        }
+
+        .title-meta span {
+            font-size: var(--small-size);
+        }
+
+        .title-meta .sep {
+            color: var(--border-subtle);
+        }
+
+        /* ===========================================
+           FEATURE CARDS
+           =========================================== */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+            gap: clamp(0.5rem, 1.5vw, 1rem);
+            width: 100%;
+            max-width: min(90vw, 1100px);
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: clamp(0.8rem, 2vw, 1.5rem);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+        }
+
+        .feature-card .icon {
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            margin-bottom: clamp(0.3rem, 0.8vw, 0.6rem);
+        }
+
+        .feature-card h3 {
+            font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+            font-weight: 600;
+            margin-bottom: clamp(0.2rem, 0.5vw, 0.4rem);
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* ===========================================
+           CODE BLOCKS
+           =========================================== */
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: clamp(0.6rem, 1.5vw, 1.2rem);
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: var(--code-size);
+            line-height: 1.6;
+            overflow: hidden;
+            max-width: min(90vw, 800px);
+        }
+
+        .code-block .prompt {
+            color: var(--accent);
+        }
+
+        .code-block .flag {
+            color: var(--accent-secondary);
+        }
+
+        .code-block .string {
+            color: var(--accent-cyan);
+        }
+
+        .code-block .comment {
+            color: #555e7e;
+            font-style: italic;
+        }
+
+        .code-block .keyword {
+            color: var(--accent-danger);
+        }
+
+        /* ===========================================
+           ARCHITECTURE / FLOW DIAGRAMS
+           =========================================== */
+        .arch-flow {
+            display: flex;
+            align-items: center;
+            gap: clamp(0.5rem, 1.5vw, 1.2rem);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .arch-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: clamp(0.5rem, 1.2vw, 1rem) clamp(0.8rem, 1.8vw, 1.5rem);
+            text-align: center;
+            min-width: clamp(80px, 12vw, 140px);
+        }
+
+        .arch-box .box-icon {
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            margin-bottom: clamp(0.15rem, 0.4vw, 0.3rem);
+        }
+
+        .arch-box .box-label {
+            font-size: var(--small-size);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .arch-box .box-desc {
+            font-size: clamp(0.55rem, 0.9vw, 0.75rem);
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .arch-arrow {
+            color: var(--accent);
+            font-size: clamp(0.8rem, 1.5vw, 1.2rem);
+            flex-shrink: 0;
+        }
+
+        .arch-box.highlight {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.15);
+        }
+
+        .arch-box.amber {
+            border-color: var(--accent-secondary);
+            box-shadow: 0 0 15px rgba(255, 176, 0, 0.15);
+        }
+
+        /* ===========================================
+           TABLES (OSINT DATA STYLE)
+           =========================================== */
+        .data-table {
+            width: 100%;
+            max-width: min(90vw, 900px);
+            border-collapse: collapse;
+            font-size: var(--small-size);
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: clamp(0.3rem, 0.8vw, 0.6rem) clamp(0.5rem, 1vw, 0.8rem);
+            border-bottom: 1px solid var(--border-glow);
+            color: var(--accent);
+            font-family: var(--font-display);
+            font-weight: 500;
+            font-size: var(--small-size);
+        }
+
+        .data-table td {
+            padding: clamp(0.3rem, 0.8vw, 0.6rem) clamp(0.5rem, 1vw, 0.8rem);
+            border-bottom: 1px solid rgba(0, 255, 65, 0.07);
+            color: var(--text-secondary);
+            font-size: var(--small-size);
+        }
+
+        .data-table tr:hover td {
+            background: rgba(0, 255, 65, 0.03);
+        }
+
+        /* ===========================================
+           SECTION HEADER
+           =========================================== */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: clamp(0.5rem, 1.5vw, 1rem);
+            margin-bottom: var(--content-gap);
+        }
+
+        .section-num {
+            font-family: var(--font-display);
+            font-size: clamp(0.7rem, 1.2vw, 1rem);
+            color: var(--accent);
+            font-weight: 600;
+            padding: clamp(0.15rem, 0.4vw, 0.3rem) clamp(0.4rem, 1vw, 0.7rem);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .section-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--border-subtle), transparent);
+        }
+
+        /* ===========================================
+           BULLET LISTS
+           =========================================== */
+        .cyber-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.3rem, 0.8vh, 0.7rem);
+        }
+
+        .cyber-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: clamp(0.4rem, 1vw, 0.8rem);
+            font-size: var(--body-size);
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .cyber-list li::before {
+            content: '>';
+            color: var(--accent);
+            font-family: monospace;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 0.1em;
+        }
+
+        .cyber-list li strong {
+            color: var(--text-primary);
+        }
+
+        /* ===========================================
+           STATUS INDICATORS
+           =========================================== */
+        .status-online {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4em;
+        }
+
+        .status-online::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent-glow);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        /* ===========================================
+           SPLIT LAYOUT (2 columns)
+           =========================================== */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(1rem, 3vw, 2.5rem);
+            align-items: center;
+            width: 100%;
+        }
+
+        @media (max-width: 600px) {
+            .split-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===========================================
+           TECH BADGES
+           =========================================== */
+        .tech-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: clamp(0.3rem, 0.8vw, 0.5rem);
+        }
+
+        .tech-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3em;
+            padding: clamp(0.2rem, 0.5vw, 0.35rem) clamp(0.5rem, 1vw, 0.8rem);
+            border: 1px solid var(--border-subtle);
+            border-radius: 100px;
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+            background: rgba(0, 255, 65, 0.03);
+            white-space: nowrap;
+        }
+
+        .tech-badge.primary {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ===========================================
+           SCANLINE OVERLAY (surveillance feel)
+           =========================================== */
+        .scanline-overlay::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 255, 65, 0.01) 2px,
+                rgba(0, 255, 65, 0.01) 4px
+            );
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* ===========================================
+           NEON GLOW BORDER ANIMATION
+           =========================================== */
+        @keyframes border-glow {
+            0%, 100% { border-color: var(--border-subtle); }
+            50% { border-color: var(--border-glow); }
+        }
+
+        .glow-border {
+            animation: border-glow 3s ease-in-out infinite;
+        }
+
+        /* ===========================================
+           LANGUAGE GRID
+           =========================================== */
+        .lang-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
+            gap: clamp(0.4rem, 1vw, 0.7rem);
+        }
+
+        .lang-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: clamp(0.3rem, 0.8vw, 0.6rem) clamp(0.5rem, 1vw, 0.8rem);
+            text-align: center;
+        }
+
+        .lang-chip .lang-code {
+            font-family: monospace;
+            font-size: var(--small-size);
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .lang-chip .lang-word {
+            font-size: clamp(0.55rem, 0.9vw, 0.75rem);
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* ===========================================
+           CLOSING SLIDE
+           =========================================== */
+        .closing-links {
+            display: flex;
+            gap: clamp(0.5rem, 1.5vw, 1rem);
+            flex-wrap: wrap;
+        }
+
+        .closing-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4em;
+            padding: clamp(0.4rem, 0.8vw, 0.6rem) clamp(0.8rem, 1.5vw, 1.2rem);
+            border: 1px solid var(--accent);
+            border-radius: 6px;
+            color: var(--accent);
+            font-size: var(--small-size);
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .closing-link:hover {
+            background: rgba(0, 255, 65, 0.1);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .closing-link.amber {
+            border-color: var(--accent-secondary);
+            color: var(--accent-secondary);
+        }
+
+        .closing-link.amber:hover {
+            background: rgba(255, 176, 0, 0.1);
+            box-shadow: 0 0 15px var(--accent-secondary-glow);
+        }
+
+        /* ===========================================
+           TIMELINE / PIPELINE STEPS
+           =========================================== */
+        .pipeline-steps {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.4rem, 1vh, 0.8rem);
+            max-width: min(90vw, 700px);
+        }
+
+        .pipeline-step {
+            display: flex;
+            align-items: center;
+            gap: clamp(0.5rem, 1.2vw, 1rem);
+        }
+
+        .step-num {
+            font-family: var(--font-display);
+            font-size: var(--small-size);
+            color: var(--accent);
+            font-weight: 700;
+            width: clamp(1.5rem, 3vw, 2rem);
+            height: clamp(1.5rem, 3vw, 2rem);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--accent);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content .step-title {
+            font-size: var(--body-size);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .step-content .step-desc {
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+        }
+
+        /* ===========================================
+           DB SCHEMA VISUAL
+           =========================================== */
+        .schema-boxes {
+            display: flex;
+            gap: clamp(1rem, 3vw, 2rem);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .schema-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            min-width: clamp(150px, 20vw, 250px);
+            overflow: hidden;
+        }
+
+        .schema-box .schema-title {
+            background: rgba(0, 255, 65, 0.1);
+            padding: clamp(0.3rem, 0.6vw, 0.5rem) clamp(0.5rem, 1vw, 0.8rem);
+            font-family: monospace;
+            font-size: var(--small-size);
+            color: var(--accent);
+            font-weight: 700;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .schema-box.amber .schema-title {
+            background: rgba(255, 176, 0, 0.1);
+            color: var(--accent-secondary);
+        }
+
+        .schema-fields {
+            padding: clamp(0.3rem, 0.6vw, 0.5rem) clamp(0.5rem, 1vw, 0.8rem);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .schema-field {
+            font-family: monospace;
+            font-size: clamp(0.55rem, 0.9vw, 0.75rem);
+            color: var(--text-secondary);
+            display: flex;
+            gap: 0.5em;
+        }
+
+        .schema-field .pk {
+            color: var(--accent-secondary);
+            font-weight: 700;
+        }
+
+        .schema-field .fk {
+            color: var(--accent-cyan);
+            font-weight: 700;
+        }
+
+        .schema-field .type {
+            color: #555e7e;
+        }
+
+        .schema-connector {
+            display: flex;
+            align-items: center;
+            color: var(--accent);
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Progress bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Navigation dots -->
+    <nav class="nav-dots" id="navDots" aria-label="Slide navigation"></nav>
+
+    <!-- Slide counter -->
+    <div class="slide-counter" id="slideCounter">
+        <span class="current">01</span> / <span class="total">22</span>
+    </div>
+
+    <!-- ===========================================
+         SLIDE 01: TITLE
+         =========================================== -->
+    <section class="slide title-slide scanline-overlay" data-slide="1">
+        <div class="slide-content">
+            <div class="title-badge reveal">
+                <span class="dot"></span>
+                OSINT TOOL
+            </div>
+            <div class="title-main reveal">
+                <h1>WhatsApp <span class="accent glow-text">Beacon</span></h1>
+            </div>
+            <p class="title-sub reveal">Track WhatsApp presence sessions, store history in SQLite, and generate polished analytics dashboards.</p>
+            <div class="title-meta reveal">
+                <span>Python 3.8+</span>
+                <span class="sep">|</span>
+                <span>Selenium</span>
+                <span class="sep">|</span>
+                <span>MIT License</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 02: THE PROBLEM
+         =========================================== -->
+    <section class="slide" data-slide="2">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">01</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal">The <span class="accent">Problem</span></h2>
+            <ul class="cyber-list" style="margin-top: var(--content-gap); max-width: min(85vw, 750px);">
+                <li class="reveal"><strong>No presence history.</strong> WhatsApp shows "online" in real time, but never records it.</li>
+                <li class="reveal"><strong>Manual observation doesn't scale.</strong> You can't sit and watch a chat window 24/7.</li>
+                <li class="reveal"><strong>Behavioral patterns are invisible.</strong> Without data, you can't see daily routines or anomalies.</li>
+                <li class="reveal"><strong>No export, no analysis.</strong> WhatsApp offers zero analytics on when your contacts are active.</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 03: THE SOLUTION
+         =========================================== -->
+    <section class="slide" data-slide="3">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">02</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal">WhatsApp Beacon <span class="accent-amber">solves this</span></h2>
+            <ul class="cyber-list" style="margin-top: var(--content-gap); max-width: min(85vw, 750px);">
+                <li class="reveal"><strong>Automated polling.</strong> Selenium watches WhatsApp Web and detects online/offline transitions.</li>
+                <li class="reveal"><strong>Session logging.</strong> Every online session gets a start time, end time, and duration in SQLite.</li>
+                <li class="reveal"><strong>Runs headless.</strong> Authenticate once, then let it run in the background indefinitely.</li>
+                <li class="reveal"><strong>Rich analytics.</strong> Generate a self-contained HTML dashboard with heatmaps, leaderboards, and filters.</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 04: KEY FEATURES (GRID 1)
+         =========================================== -->
+    <section class="slide" data-slide="4">
+        <div class="slide-content" style="align-items: center;">
+            <div class="section-header reveal" style="max-width: min(90vw, 1100px); width: 100%;">
+                <span class="section-num">03</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Core <span class="accent">Features</span></h2>
+            <div class="feature-grid">
+                <div class="feature-card reveal">
+                    <div class="icon">&#128268;</div>
+                    <h3>PyPI Install</h3>
+                    <p>pip install whatsapp-osint. Two entry points, zero config needed.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128421;</div>
+                    <h3>Headless Mode</h3>
+                    <p>Authenticate once with QR, then track invisibly in the background.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128450;</div>
+                    <h3>SQLite Storage</h3>
+                    <p>Every session persisted locally. No cloud, no third parties.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128202;</div>
+                    <h3>Analytics Dashboard</h3>
+                    <p>Static HTML with heatmaps, leaderboards, and live contact filters.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128196;</div>
+                    <h3>Excel Export</h3>
+                    <p>One flag exports the full session history to History_wp.xlsx.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#127760;</div>
+                    <h3>Multi-language</h3>
+                    <p>Detects "online" status in 8 languages: EN, DE, PT, ES, FR, IT, CAT, TR.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 05: FEATURES (GRID 2)
+         =========================================== -->
+    <section class="slide" data-slide="5">
+        <div class="slide-content" style="align-items: center;">
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">More <span class="accent-amber">Capabilities</span></h2>
+            <div class="feature-grid" style="max-width: min(90vw, 800px);">
+                <div class="feature-card reveal">
+                    <div class="icon">&#128295;</div>
+                    <h3>One-Click Installer</h3>
+                    <p>curl script handles git, venv, pip, and Chrome detection on Linux.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128736;</div>
+                    <h3>Auto Driver Resolution</h3>
+                    <p>Selenium Manager matches ChromeDriver to your browser version automatically.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128221;</div>
+                    <h3>YAML Config</h3>
+                    <p>Defaults, config file, and CLI args merged in priority order.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#127912;</div>
+                    <h3>Colored Logging</h3>
+                    <p>colorlog console output plus plain-text file logs in logs/ directory.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 06: ARCHITECTURE OVERVIEW
+         =========================================== -->
+    <section class="slide" data-slide="6">
+        <div class="slide-content" style="align-items: center;">
+            <div class="section-header reveal" style="max-width: min(90vw, 1000px); width: 100%;">
+                <span class="section-num">04</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Architecture <span class="accent">Overview</span></h2>
+            <div class="arch-flow reveal-scale" style="margin-bottom: var(--content-gap);">
+                <div class="arch-box highlight">
+                    <div class="box-icon">&#128100;</div>
+                    <div class="box-label">CLI / main.py</div>
+                    <div class="box-desc">Entry point</div>
+                </div>
+                <div class="arch-arrow">&#8594;</div>
+                <div class="arch-box">
+                    <div class="box-icon">&#9881;</div>
+                    <div class="box-label">Config</div>
+                    <div class="box-desc">YAML + CLI args</div>
+                </div>
+                <div class="arch-arrow">&#8594;</div>
+                <div class="arch-box highlight">
+                    <div class="box-icon">&#128269;</div>
+                    <div class="box-label">Beacon</div>
+                    <div class="box-desc">Selenium polling</div>
+                </div>
+                <div class="arch-arrow">&#8594;</div>
+                <div class="arch-box amber">
+                    <div class="box-icon">&#128450;</div>
+                    <div class="box-label">Database</div>
+                    <div class="box-desc">SQLite</div>
+                </div>
+            </div>
+            <div class="arch-flow reveal-scale">
+                <div class="arch-box amber">
+                    <div class="box-icon">&#128450;</div>
+                    <div class="box-label">Database</div>
+                </div>
+                <div class="arch-arrow">&#8594;</div>
+                <div class="arch-box">
+                    <div class="box-icon">&#128196;</div>
+                    <div class="box-label">Excel Export</div>
+                    <div class="box-desc">openpyxl</div>
+                </div>
+                <div class="arch-arrow" style="margin-left: clamp(0.5rem, 2vw, 1.5rem);">&#8594;</div>
+                <div class="arch-box highlight">
+                    <div class="box-icon">&#128202;</div>
+                    <div class="box-label">Analytics</div>
+                    <div class="box-desc">HTML dashboard</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 07: HOW IT WORKS (FLOW)
+         =========================================== -->
+    <section class="slide" data-slide="7">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">05</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">How the <span class="accent">Polling Loop</span> Works</h2>
+            <div class="pipeline-steps">
+                <div class="pipeline-step reveal">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <div class="step-title">Launch Chrome via Selenium</div>
+                        <div class="step-desc">Reuses saved profile from data/chrome_profile for session persistence.</div>
+                    </div>
+                </div>
+                <div class="pipeline-step reveal">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Navigate to WhatsApp Web</div>
+                        <div class="step-desc">Waits for login (QR scan on first run, auto-login after that).</div>
+                    </div>
+                </div>
+                <div class="pipeline-step reveal">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <div class="step-title">Search for target contact</div>
+                        <div class="step-desc">Types username into the search box, clicks the first matching result.</div>
+                    </div>
+                </div>
+                <div class="pipeline-step reveal">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <div class="step-title">Poll the status header</div>
+                        <div class="step-desc">Checks for localized "online" text. Transitions trigger session start/end events.</div>
+                    </div>
+                </div>
+                <div class="pipeline-step reveal">
+                    <div class="step-num">5</div>
+                    <div class="step-content">
+                        <div class="step-title">Write to SQLite</div>
+                        <div class="step-desc">Session start, end, and computed duration stored in the Sessions table.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 08: THE BEACON CLASS
+         =========================================== -->
+    <section class="slide" data-slide="8">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">06</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);"><span class="accent">beacon.py</span>: The Core Engine</h2>
+            <div class="split-layout">
+                <ul class="cyber-list reveal">
+                    <li><strong>WhatsAppBeacon class</strong> manages the entire Selenium lifecycle.</li>
+                    <li><strong>XPath candidates</strong> for login, search, and results adapt to WhatsApp DOM changes.</li>
+                    <li>Prefers <span class="accent">data-testid</span> and <span class="accent">aria-label</span> over positional XPaths.</li>
+                    <li>Supports both Lexical rich-text editor and native input variants.</li>
+                </ul>
+                <div class="code-block reveal">
+                    <span class="comment"># Language-aware status detection</span><br>
+                    <span class="keyword">ONLINE_STATUS</span> = {<br>
+                    &nbsp;&nbsp;<span class="string">'en'</span>: <span class="string">'online'</span>,<br>
+                    &nbsp;&nbsp;<span class="string">'es'</span>: <span class="string">'en linea'</span>,<br>
+                    &nbsp;&nbsp;<span class="string">'fr'</span>: <span class="string">'en ligne'</span>,<br>
+                    &nbsp;&nbsp;<span class="string">'de'</span>: <span class="string">'online'</span>,<br>
+                    &nbsp;&nbsp;<span class="string">'tr'</span>: <span class="string">'cevrimici'</span>,<br>
+                    &nbsp;&nbsp;<span class="comment"># ... 8 languages total</span><br>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 09: DATABASE SCHEMA
+         =========================================== -->
+    <section class="slide" data-slide="9">
+        <div class="slide-content" style="align-items: center;">
+            <div class="section-header reveal" style="max-width: min(90vw, 900px); width: 100%;">
+                <span class="section-num">07</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Database <span class="accent">Schema</span></h2>
+            <div class="schema-boxes reveal-scale">
+                <div class="schema-box">
+                    <div class="schema-title">Users</div>
+                    <div class="schema-fields">
+                        <div class="schema-field"><span class="pk">PK</span> id <span class="type">INTEGER</span></div>
+                        <div class="schema-field">&nbsp;&nbsp;&nbsp; user_name <span class="type">TEXT UNIQUE</span></div>
+                    </div>
+                </div>
+                <div class="schema-connector">&#8592; FK &#8594;</div>
+                <div class="schema-box amber">
+                    <div class="schema-title">Sessions</div>
+                    <div class="schema-fields">
+                        <div class="schema-field"><span class="pk">PK</span> id <span class="type">INTEGER</span></div>
+                        <div class="schema-field"><span class="fk">FK</span> user_id <span class="type">INTEGER</span></div>
+                        <div class="schema-field">&nbsp;&nbsp;&nbsp; start_date <span class="type">TEXT</span></div>
+                        <div class="schema-field">&nbsp;&nbsp;&nbsp; start_hour <span class="type">TEXT</span></div>
+                        <div class="schema-field">&nbsp;&nbsp;&nbsp; start_minute <span class="type">TEXT</span></div>
+                        <div class="schema-field">&nbsp;&nbsp;&nbsp; start_second <span class="type">TEXT</span></div>
+                        <div class="schema-field">&nbsp;&nbsp;&nbsp; end_date <span class="type">TEXT</span></div>
+                        <div class="schema-field">&nbsp;&nbsp;&nbsp; end_hour <span class="type">TEXT</span></div>
+                        <div class="schema-field">&nbsp;&nbsp;&nbsp; end_minute <span class="type">TEXT</span></div>
+                        <div class="schema-field">&nbsp;&nbsp;&nbsp; end_second <span class="type">TEXT</span></div>
+                        <div class="schema-field">&nbsp;&nbsp;&nbsp; time_connected <span class="type">TEXT</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 10: CONFIG SYSTEM
+         =========================================== -->
+    <section class="slide" data-slide="10">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">08</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Configuration <span class="accent-amber">Priority Chain</span></h2>
+            <div class="split-layout">
+                <div>
+                    <div class="arch-flow reveal" style="flex-direction: column; align-items: flex-start; gap: clamp(0.4rem, 1vh, 0.8rem);">
+                        <div class="arch-box" style="width: 100%; text-align: left;">
+                            <div class="box-label">1. Hardcoded Defaults</div>
+                            <div class="box-desc">language: en, headless: false, etc.</div>
+                        </div>
+                        <div class="arch-arrow" style="transform: rotate(90deg); align-self: center;">&#8594;</div>
+                        <div class="arch-box" style="width: 100%; text-align: left;">
+                            <div class="box-label">2. config.yaml</div>
+                            <div class="box-desc">Overrides defaults if file exists</div>
+                        </div>
+                        <div class="arch-arrow" style="transform: rotate(90deg); align-self: center;">&#8594;</div>
+                        <div class="arch-box highlight" style="width: 100%; text-align: left;">
+                            <div class="box-label">3. CLI Arguments</div>
+                            <div class="box-desc">Highest priority, wins all</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-block reveal">
+                    <span class="comment"># config.yaml</span><br>
+                    <span class="keyword">username</span>: <span class="string">"Target Name"</span><br>
+                    <span class="keyword">language</span>: <span class="string">"en"</span><br>
+                    <span class="keyword">headless</span>: <span class="string">false</span><br>
+                    <span class="keyword">excel</span>: <span class="string">false</span><br>
+                    <span class="keyword">browser</span>: <span class="string">"chrome"</span><br>
+                    <span class="keyword">log_level</span>: <span class="string">"INFO"</span><br>
+                    <span class="keyword">data_dir</span>: <span class="string">"data"</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 11: ANALYTICS DASHBOARD
+         =========================================== -->
+    <section class="slide" data-slide="11">
+        <div class="slide-content" style="align-items: center;">
+            <div class="section-header reveal" style="max-width: min(90vw, 900px); width: 100%;">
+                <span class="section-num">09</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Analytics <span class="accent">Dashboard</span></h2>
+            <div class="feature-grid" style="max-width: min(90vw, 900px);">
+                <div class="feature-card reveal">
+                    <div class="icon">&#128200;</div>
+                    <h3>KPI Cards</h3>
+                    <p>Total sessions, unique contacts, total online time at a glance.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#127942;</div>
+                    <h3>Leaderboard</h3>
+                    <p>Per-contact ranking by total online duration.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128293;</div>
+                    <h3>Heatmap</h3>
+                    <p>Weekday/hour grid showing activity density patterns.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128202;</div>
+                    <h3>Daily Bars</h3>
+                    <p>Online-time per day as bar chart visualization.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128270;</div>
+                    <h3>Live Filters</h3>
+                    <p>In-page contact filter updates all charts in real time.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128337;</div>
+                    <h3>Session Tables</h3>
+                    <p>Recent sessions and longest sessions, sortable and filterable.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 12: ANALYTICS CLASS DEEP DIVE
+         =========================================== -->
+    <section class="slide" data-slide="12">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">10</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);"><span class="accent">analytics.py</span>: Under the Hood</h2>
+            <ul class="cyber-list" style="max-width: min(85vw, 750px);">
+                <li class="reveal"><strong>AnalyticsDashboard class</strong> reads the SQLite DB and generates a self-contained HTML file.</li>
+                <li class="reveal"><strong>SQL JOIN</strong> merges Sessions + Users, filters out incomplete rows, orders by timestamp.</li>
+                <li class="reveal"><strong>Data pre-processing</strong> in Python: daily aggregations, weekday/hour heatmap matrix, duration distribution buckets.</li>
+                <li class="reveal"><strong>JSON embedding</strong>: processed data gets serialized directly into the HTML template as inline JavaScript objects.</li>
+                <li class="reveal"><strong>Zero dependencies</strong> at runtime. The output HTML uses no CDN, no external libs.</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 13: TECH STACK
+         =========================================== -->
+    <section class="slide" data-slide="13">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">11</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Tech <span class="accent">Stack</span></h2>
+            <div class="split-layout">
+                <div>
+                    <h3 class="reveal" style="color: var(--accent); margin-bottom: var(--element-gap);">Runtime</h3>
+                    <div class="tech-badges reveal" style="margin-bottom: var(--content-gap);">
+                        <span class="tech-badge primary">Python 3.8+</span>
+                        <span class="tech-badge primary">Selenium</span>
+                        <span class="tech-badge">webdriver-manager</span>
+                        <span class="tech-badge">SQLite3</span>
+                        <span class="tech-badge">openpyxl</span>
+                        <span class="tech-badge">PyYAML</span>
+                        <span class="tech-badge">colorlog</span>
+                    </div>
+                    <h3 class="reveal" style="color: var(--accent-secondary); margin-bottom: var(--element-gap);">Dev / Test</h3>
+                    <div class="tech-badges reveal">
+                        <span class="tech-badge">pytest</span>
+                        <span class="tech-badge">pytest-mock</span>
+                        <span class="tech-badge">coverage</span>
+                        <span class="tech-badge">twine</span>
+                        <span class="tech-badge">build</span>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="reveal" style="color: var(--accent-cyan); margin-bottom: var(--element-gap);">Infrastructure</h3>
+                    <ul class="cyber-list reveal">
+                        <li><strong>Chrome/Chromium</strong> via Selenium WebDriver</li>
+                        <li><strong>SQLite</strong> for local, zero-config persistence</li>
+                        <li><strong>PyPI</strong> for distribution (pip install)</li>
+                        <li><strong>setuptools</strong> build backend</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 14: PACKAGE STRUCTURE
+         =========================================== -->
+    <section class="slide" data-slide="14">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">12</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Package <span class="accent-amber">Structure</span></h2>
+            <div class="code-block reveal" style="max-width: min(85vw, 600px);">
+                <span class="comment"># src/whatsapp_beacon/</span><br>
+                <span class="string">main.py</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># CLI entry point, arg parsing</span><br>
+                <span class="string">config.py</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Defaults + YAML + CLI merge</span><br>
+                <span class="string">beacon.py</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Selenium polling engine</span><br>
+                <span class="string">database.py</span>&nbsp;&nbsp;&nbsp;<span class="comment"># SQLite CRUD operations</span><br>
+                <span class="string">analytics.py</span>&nbsp;&nbsp;<span class="comment"># Dashboard HTML generator</span><br>
+                <span class="string">db_to_excel.py</span> <span class="comment"># Excel export via openpyxl</span><br>
+                <span class="string">logger.py</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># colorlog + file handler</span><br>
+                <br>
+                <span class="comment"># tests/unit/</span><br>
+                <span class="string">test_beacon.py</span>&nbsp;&nbsp;<span class="comment"># Beacon class tests</span><br>
+                <span class="string">test_config.py</span>&nbsp;&nbsp;<span class="comment"># Config merge tests</span><br>
+                <span class="string">test_database.py</span> <span class="comment"># DB operation tests</span><br>
+                <span class="string">test_analytics.py</span> <span class="comment"># Dashboard gen tests</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 15: MULTI-LANGUAGE SUPPORT
+         =========================================== -->
+    <section class="slide" data-slide="15">
+        <div class="slide-content" style="align-items: center;">
+            <div class="section-header reveal" style="max-width: min(90vw, 900px); width: 100%;">
+                <span class="section-num">13</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Multi-Language <span class="accent">Detection</span></h2>
+            <p class="reveal" style="margin-bottom: var(--content-gap); max-width: min(80vw, 600px); text-align: center;">WhatsApp localizes the "online" status text. The beacon checks against a language-specific dictionary.</p>
+            <div class="lang-grid reveal-scale" style="max-width: min(85vw, 700px);">
+                <div class="lang-chip">
+                    <div class="lang-code">en</div>
+                    <div class="lang-word">online</div>
+                </div>
+                <div class="lang-chip">
+                    <div class="lang-code">de</div>
+                    <div class="lang-word">online</div>
+                </div>
+                <div class="lang-chip">
+                    <div class="lang-code">pt</div>
+                    <div class="lang-word">online</div>
+                </div>
+                <div class="lang-chip">
+                    <div class="lang-code">es</div>
+                    <div class="lang-word">en linea</div>
+                </div>
+                <div class="lang-chip">
+                    <div class="lang-code">fr</div>
+                    <div class="lang-word">en ligne</div>
+                </div>
+                <div class="lang-chip">
+                    <div class="lang-code">it</div>
+                    <div class="lang-word">in linea</div>
+                </div>
+                <div class="lang-chip">
+                    <div class="lang-code">cat</div>
+                    <div class="lang-word">en linia</div>
+                </div>
+                <div class="lang-chip">
+                    <div class="lang-code">tr</div>
+                    <div class="lang-word">cevrimici</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 16: INSTALLATION (PYPI)
+         =========================================== -->
+    <section class="slide" data-slide="16">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">14</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Getting <span class="accent">Started</span></h2>
+            <div class="split-layout">
+                <div>
+                    <h3 class="reveal" style="color: var(--accent); margin-bottom: var(--element-gap);">From PyPI</h3>
+                    <div class="code-block reveal">
+                        <span class="prompt">$</span> pip install whatsapp-osint
+                    </div>
+                    <h3 class="reveal" style="color: var(--accent-secondary); margin-top: var(--content-gap); margin-bottom: var(--element-gap);">One-Click Installer</h3>
+                    <div class="code-block reveal">
+                        <span class="prompt">$</span> curl -fsSL \<br>
+                        &nbsp;&nbsp;https://raw.githubusercontent.com/<br>
+                        &nbsp;&nbsp;jasperan/whatsapp-osint/<br>
+                        &nbsp;&nbsp;master/install.sh | bash
+                    </div>
+                </div>
+                <div>
+                    <h3 class="reveal" style="color: var(--accent-cyan); margin-bottom: var(--element-gap);">Manual Dev Setup</h3>
+                    <div class="code-block reveal">
+                        <span class="prompt">$</span> git clone <span class="string">github.com/</span><br>
+                        &nbsp;&nbsp;<span class="string">jasperan/whatsapp-osint</span><br>
+                        <span class="prompt">$</span> cd whatsapp-osint<br>
+                        <span class="prompt">$</span> python3 -m venv .venv<br>
+                        <span class="prompt">$</span> source .venv/bin/activate<br>
+                        <span class="prompt">$</span> pip install -e <span class="string">".[dev]"</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 17: USAGE EXAMPLES
+         =========================================== -->
+    <section class="slide" data-slide="17">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">15</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Usage <span class="accent-amber">Examples</span></h2>
+            <div class="code-block reveal" style="max-width: min(85vw, 700px); margin-bottom: var(--content-gap);">
+                <span class="comment"># Basic tracking</span><br>
+                <span class="prompt">$</span> whatsapp-beacon <span class="flag">-u</span> <span class="string">"John Doe"</span><br><br>
+                <span class="comment"># Headless mode (background tracking)</span><br>
+                <span class="prompt">$</span> whatsapp-beacon <span class="flag">-u</span> <span class="string">"Maria"</span> <span class="flag">--headless</span><br><br>
+                <span class="comment"># Spanish WhatsApp Web interface</span><br>
+                <span class="prompt">$</span> whatsapp-beacon <span class="flag">-u</span> <span class="string">"Carlos"</span> <span class="flag">-l</span> es<br><br>
+                <span class="comment"># Export sessions to Excel</span><br>
+                <span class="prompt">$</span> whatsapp-beacon <span class="flag">-e</span><br><br>
+                <span class="comment"># Generate analytics dashboard</span><br>
+                <span class="prompt">$</span> whatsapp-beacon <span class="flag">--analytics</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 18: CLI ARGUMENTS
+         =========================================== -->
+    <section class="slide" data-slide="18">
+        <div class="slide-content" style="align-items: center;">
+            <div class="section-header reveal" style="max-width: min(90vw, 900px); width: 100%;">
+                <span class="section-num">16</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">CLI <span class="accent">Arguments</span></h2>
+            <table class="data-table reveal-scale">
+                <thead>
+                    <tr>
+                        <th>Flag</th>
+                        <th>Purpose</th>
+                        <th>Default</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="accent">-u</span>, --username</td>
+                        <td>Contact name to track</td>
+                        <td>Required</td>
+                    </tr>
+                    <tr>
+                        <td><span class="accent">-l</span>, --language</td>
+                        <td>WhatsApp Web language code</td>
+                        <td>en</td>
+                    </tr>
+                    <tr>
+                        <td><span class="accent">-e</span>, --excel</td>
+                        <td>Export DB to Excel</td>
+                        <td>false</td>
+                    </tr>
+                    <tr>
+                        <td><span class="accent">--headless</span></td>
+                        <td>Run without visible browser</td>
+                        <td>false</td>
+                    </tr>
+                    <tr>
+                        <td><span class="accent">--analytics</span></td>
+                        <td>Generate dashboard and exit</td>
+                        <td>false</td>
+                    </tr>
+                    <tr>
+                        <td><span class="accent">--config</span></td>
+                        <td>Custom config file path</td>
+                        <td>config.yaml</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 19: AUTHENTICATION FLOW
+         =========================================== -->
+    <section class="slide" data-slide="19">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">17</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Authentication <span class="accent">Flow</span></h2>
+            <div class="split-layout">
+                <div class="pipeline-steps">
+                    <div class="pipeline-step reveal">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">First Run (Non-Headless)</div>
+                            <div class="step-desc">Chrome opens, WhatsApp shows QR code. Scan with your phone.</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-step reveal">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Profile Saved</div>
+                            <div class="step-desc">Session cookies saved in data/chrome_profile/ for reuse.</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-step reveal">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Subsequent Runs</div>
+                            <div class="step-desc">Auto-login via saved profile. Works headless.</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="feature-card glow-border reveal" style="border-color: var(--accent-secondary);">
+                        <div class="icon">&#128247;</div>
+                        <h3 style="color: var(--accent-secondary);">Headless QR Fallback</h3>
+                        <p>If run headless without an existing session, the tool saves a screenshot to <strong>qrcode.png</strong> so you can scan it externally.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 20: OUTPUT FILES
+         =========================================== -->
+    <section class="slide" data-slide="20">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">18</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Output <span class="accent">Files</span></h2>
+            <table class="data-table reveal-scale" style="max-width: min(85vw, 700px);">
+                <thead>
+                    <tr>
+                        <th>Path</th>
+                        <th>Content</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="accent">data/victims_logs.db</span></td>
+                        <td>SQLite database with Users + Sessions tables</td>
+                    </tr>
+                    <tr>
+                        <td><span class="accent">data/chrome_profile/</span></td>
+                        <td>Persisted Chrome session (cookies, localStorage)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="accent-amber">logs/whatsapp_beacon.log</span></td>
+                        <td>Plain text log file, rotates per run</td>
+                    </tr>
+                    <tr>
+                        <td><span class="accent-amber">History_wp.xlsx</span></td>
+                        <td>Excel export of all sessions (optional)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="accent-cyan">analytics/index.html</span></td>
+                        <td>Self-contained analytics dashboard</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 21: XPATH RESILIENCE
+         =========================================== -->
+    <section class="slide" data-slide="21">
+        <div class="slide-content">
+            <div class="section-header reveal">
+                <span class="section-num">19</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">XPath <span class="accent">Resilience</span></h2>
+            <ul class="cyber-list" style="max-width: min(85vw, 750px);">
+                <li class="reveal"><strong>WhatsApp Web updates its DOM frequently.</strong> Positional XPaths break on every redesign.</li>
+                <li class="reveal">The beacon uses <strong>candidate lists</strong> of 5+ XPaths per element (login, search, results).</li>
+                <li class="reveal">Prefers <span class="accent">data-testid</span> and <span class="accent">aria-label</span> attributes: they survive layout changes better than positional paths.</li>
+                <li class="reveal">Supports both the Lexical rich-text editor and native input variants that WhatsApp alternates between.</li>
+                <li class="reveal">When selectors break, fix the 3 candidate arrays in <span class="accent-amber">beacon.py</span>: _LOGIN_READY_XPATHS, _SEARCH_BOX_XPATHS, _SEARCH_RESULT_XPATHS.</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 22: FUTURE ROADMAP
+         =========================================== -->
+    <section class="slide" data-slide="22">
+        <div class="slide-content" style="align-items: center;">
+            <div class="section-header reveal" style="max-width: min(90vw, 900px); width: 100%;">
+                <span class="section-num">20</span>
+                <span class="section-line"></span>
+            </div>
+            <h2 class="reveal" style="margin-bottom: var(--content-gap);">Future <span class="accent-amber">Roadmap</span></h2>
+            <div class="feature-grid" style="max-width: min(90vw, 900px);">
+                <div class="feature-card reveal">
+                    <div class="icon">&#128101;</div>
+                    <h3>Multi-Contact Tracking</h3>
+                    <p>Monitor multiple contacts simultaneously in one session.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128276;</div>
+                    <h3>Real-Time Alerts</h3>
+                    <p>Push notifications or webhooks when a contact goes online.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128300;</div>
+                    <h3>Pattern Analysis</h3>
+                    <p>ML-based behavioral pattern detection and anomaly flagging.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#127760;</div>
+                    <h3>More Languages</h3>
+                    <p>Community-contributed translations for broader coverage.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128187;</div>
+                    <h3>REST API</h3>
+                    <p>Optional HTTP server for querying session data programmatically.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="icon">&#128230;</div>
+                    <h3>Docker Image</h3>
+                    <p>Containerized deployment with Chrome pre-installed.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 23: CLOSING
+         =========================================== -->
+    <section class="slide title-slide" data-slide="23">
+        <div class="slide-content">
+            <div class="title-badge reveal">
+                <span class="dot"></span>
+                OPEN SOURCE
+            </div>
+            <div class="title-main reveal">
+                <h1>WhatsApp <span class="accent glow-text">Beacon</span></h1>
+            </div>
+            <p class="title-sub reveal">Automated WhatsApp presence tracking with SQLite logging and analytics dashboards. MIT licensed.</p>
+            <div class="closing-links reveal">
+                <a href="https://github.com/jasperan/whatsapp-osint" class="closing-link" target="_blank">GitHub Repo</a>
+                <a href="https://pypi.org/project/whatsapp-osint/" class="closing-link amber" target="_blank">PyPI Package</a>
+            </div>
+            <div class="title-meta reveal" style="margin-top: var(--content-gap);">
+                <span>pip install whatsapp-osint</span>
+                <span class="sep">|</span>
+                <span>by jasperan</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===========================================
+       SLIDE PRESENTATION CONTROLLER
+       =========================================== -->
+    <script>
+        class SlidePresentation {
+            constructor() {
+                this.slides = document.querySelectorAll('.slide');
+                this.currentSlide = 0;
+                this.totalSlides = this.slides.length;
+                this.isScrolling = false;
+
+                this.setupIntersectionObserver();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.setupProgressBar();
+                this.setupNavDots();
+                this.updateCounter(0);
+            }
+
+            /* --- Intersection Observer: add .visible on scroll --- */
+            setupIntersectionObserver() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            const index = Array.from(this.slides).indexOf(entry.target);
+                            if (index !== -1) {
+                                this.currentSlide = index;
+                                this.updateProgress();
+                                this.updateNavDots();
+                                this.updateCounter(index);
+                            }
+                        }
+                    });
+                }, {
+                    threshold: 0.5
+                });
+
+                this.slides.forEach(slide => observer.observe(slide));
+            }
+
+            /* --- Keyboard Navigation --- */
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (e) => {
+                    switch(e.key) {
+                        case 'ArrowDown':
+                        case 'ArrowRight':
+                        case ' ':
+                        case 'PageDown':
+                            e.preventDefault();
+                            this.goToSlide(this.currentSlide + 1);
+                            break;
+                        case 'ArrowUp':
+                        case 'ArrowLeft':
+                        case 'PageUp':
+                            e.preventDefault();
+                            this.goToSlide(this.currentSlide - 1);
+                            break;
+                        case 'Home':
+                            e.preventDefault();
+                            this.goToSlide(0);
+                            break;
+                        case 'End':
+                            e.preventDefault();
+                            this.goToSlide(this.totalSlides - 1);
+                            break;
+                    }
+                });
+            }
+
+            /* --- Touch / Swipe Support --- */
+            setupTouchNav() {
+                let touchStartY = 0;
+                let touchEndY = 0;
+
+                document.addEventListener('touchstart', (e) => {
+                    touchStartY = e.changedTouches[0].screenY;
+                }, { passive: true });
+
+                document.addEventListener('touchend', (e) => {
+                    touchEndY = e.changedTouches[0].screenY;
+                    const diff = touchStartY - touchEndY;
+                    if (Math.abs(diff) > 50) {
+                        if (diff > 0) {
+                            this.goToSlide(this.currentSlide + 1);
+                        } else {
+                            this.goToSlide(this.currentSlide - 1);
+                        }
+                    }
+                }, { passive: true });
+            }
+
+            /* --- Progress Bar --- */
+            setupProgressBar() {
+                this.progressBar = document.getElementById('progressBar');
+                window.addEventListener('scroll', () => {
+                    this.updateProgress();
+                }, { passive: true });
+            }
+
+            updateProgress() {
+                if (!this.progressBar) return;
+                const progress = ((this.currentSlide + 1) / this.totalSlides) * 100;
+                this.progressBar.style.width = progress + '%';
+            }
+
+            /* --- Navigation Dots --- */
+            setupNavDots() {
+                const container = document.getElementById('navDots');
+                if (!container) return;
+
+                this.slides.forEach((_, index) => {
+                    const dot = document.createElement('button');
+                    dot.className = 'nav-dot' + (index === 0 ? ' active' : '');
+                    dot.setAttribute('aria-label', `Go to slide ${index + 1}`);
+                    dot.addEventListener('click', () => this.goToSlide(index));
+                    container.appendChild(dot);
+                });
+
+                this.navDotElements = container.querySelectorAll('.nav-dot');
+            }
+
+            updateNavDots() {
+                if (!this.navDotElements) return;
+                this.navDotElements.forEach((dot, index) => {
+                    dot.classList.toggle('active', index === this.currentSlide);
+                });
+            }
+
+            /* --- Slide Counter --- */
+            updateCounter(index) {
+                const counter = document.getElementById('slideCounter');
+                if (!counter) return;
+                const current = counter.querySelector('.current');
+                const total = counter.querySelector('.total');
+                if (current) current.textContent = String(index + 1).padStart(2, '0');
+                if (total) total.textContent = String(this.totalSlides).padStart(2, '0');
+            }
+
+            /* --- Navigate to Slide --- */
+            goToSlide(index) {
+                if (index < 0 || index >= this.totalSlides) return;
+                this.slides[index].scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        /* Initialize on DOM ready */
+        document.addEventListener('DOMContentLoaded', () => {
+            new SlidePresentation();
+        });
+    </script>
+</body>
+</html>
