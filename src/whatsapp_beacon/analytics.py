@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 
 
 class AnalyticsDashboard:
-    def __init__(self, db_path: str = 'database/victims_logs.db', output_file: str = 'analytics/index.html'):
+    def __init__(self, db_path: str = 'data/victims_logs.db', output_file: str = 'analytics/index.html'):
         self.db_path = Path(db_path)
         self.output_file = Path(output_file)
 
@@ -35,12 +35,11 @@ class AnalyticsDashboard:
             FROM Sessions s
             JOIN Users u ON s.user_id = u.id
             WHERE s.start_date IS NOT NULL
-              AND s.end_date IS NOT NULL
-              AND s.time_connected IS NOT NULL
             ORDER BY s.start_date ASC, s.start_hour ASC, s.start_minute ASC, s.start_second ASC
         '''
 
         sessions: List[Dict[str, Any]] = []
+        now = datetime.now()
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query)
@@ -48,21 +47,30 @@ class AnalyticsDashboard:
                 start_dt = datetime.strptime(
                     f"{row[1]} {row[2]}:{row[3]}:{row[4]}", '%Y-%m-%d %H:%M:%S'
                 )
-                end_dt = datetime.strptime(
-                    f"{row[5]} {row[6]}:{row[7]}:{row[8]}", '%Y-%m-%d %H:%M:%S'
-                )
-                duration_seconds = int(float(row[9])) if row[9] not in (None, '') else int(max((end_dt - start_dt).total_seconds(), 0))
+                # For in-progress sessions (end_date is NULL), use current time
+                in_progress = row[5] is None
+                if in_progress:
+                    end_dt = now
+                else:
+                    end_dt = datetime.strptime(
+                        f"{row[5]} {row[6]}:{row[7]}:{row[8]}", '%Y-%m-%d %H:%M:%S'
+                    )
+                if row[9] not in (None, ''):
+                    duration_seconds = int(float(row[9]))
+                else:
+                    duration_seconds = int(max((end_dt - start_dt).total_seconds(), 0))
                 sessions.append({
                     'user_name': row[0],
                     'start_iso': start_dt.isoformat(),
                     'end_iso': end_dt.isoformat(),
                     'start_label': start_dt.strftime('%Y-%m-%d %H:%M:%S'),
-                    'end_label': end_dt.strftime('%Y-%m-%d %H:%M:%S'),
+                    'end_label': 'In progress' if in_progress else end_dt.strftime('%Y-%m-%d %H:%M:%S'),
                     'date': start_dt.strftime('%Y-%m-%d'),
                     'hour': start_dt.hour,
                     'weekday_index': start_dt.weekday(),
                     'weekday_label': start_dt.strftime('%A'),
                     'duration_seconds': duration_seconds,
+                    'in_progress': in_progress,
                 })
         return sessions
 

@@ -7,7 +7,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 class Converter:
-    def __init__(self, db_path: str = 'database/victims_logs.db', excel_file: str = 'History_wp.xlsx'):
+    def __init__(self, db_path: str = 'data/victims_logs.db', excel_file: str = 'History_wp.xlsx'):
         self.db_path = Path(db_path)
         self.excel_file = Path(excel_file)
 

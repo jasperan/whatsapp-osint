@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Database:
-    def __init__(self, db_path: str = 'database/victims_logs.db'):
+    def __init__(self, db_path: str = 'data/victims_logs.db'):
         self.db_path = Path(db_path)
         # Ensure the directory exists
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
