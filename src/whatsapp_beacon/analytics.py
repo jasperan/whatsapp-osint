@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from collections import defaultdict
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -161,7 +161,7 @@ class AnalyticsDashboard:
                     busiest_hour_count = count
 
         return {
-            'generated_at': datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC'),
+            'generated_at': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC'),
             'summary': {
                 'total_sessions': total_sessions,
                 'total_contacts': total_contacts,
