@@ -352,7 +352,12 @@ class WhatsAppBeacon:
             return
 
         user_id = self.database.get_or_create_user(user)
-        xpath = f"//span[@title='{ONLINE_STATUS[language]}']"
+        online_lower = ONLINE_STATUS[language].lower()
+        xpath = (
+            f"//span[contains(translate(@title,"
+            f" 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),"
+            f" '{online_lower}')]"
+        )
         logger.info(f"Tracking {user}...")
 
         previous_state = 'OFFLINE'
