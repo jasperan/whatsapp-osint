@@ -145,14 +145,19 @@ cython_debug/
 .vscode/
 
 # Claude settings
+.claude/
 .claude/*
 
 # Local agent state
 .agents/
 .crush/
+.omc/
 .openhands/
 .pi/
 .serena/
+
+# Generated content (local only)
+content/
 
 # OS files
 .DS_Store
