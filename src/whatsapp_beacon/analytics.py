@@ -47,7 +47,6 @@ class AnalyticsDashboard:
                 start_dt = datetime.strptime(
                     f"{row[1]} {row[2]}:{row[3]}:{row[4]}", '%Y-%m-%d %H:%M:%S'
                 )
-                # For in-progress sessions (end_date is NULL), use current time
                 in_progress = row[5] is None
                 if in_progress:
                     end_dt = now

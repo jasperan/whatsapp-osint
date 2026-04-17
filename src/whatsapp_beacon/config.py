@@ -1,16 +1,16 @@
-import os
-import yaml
-import argparse
 from pathlib import Path
+from typing import Any, Dict
+
+import yaml
+
 
 class Config:
-    def __init__(self, config_file='config.yaml'):
-        self.config = self._load_defaults()
-        if os.path.exists(config_file):
+    def __init__(self, config_file: str = 'config.yaml') -> None:
+        self.config: Dict[str, Any] = self._load_defaults()
+        if Path(config_file).exists():
             self.config.update(self._load_from_file(config_file))
-        self._update_from_env()
 
-    def _load_defaults(self):
+    def _load_defaults(self) -> Dict[str, Any]:
         return {
             'username': '',
             'language': 'en',
@@ -24,26 +24,21 @@ class Config:
             'chrome_binary_path': None
         }
 
-    def _load_from_file(self, filepath):
+    def _load_from_file(self, filepath: str) -> Dict[str, Any]:
         try:
             with open(filepath, 'r') as f:
                 return yaml.safe_load(f) or {}
-        except Exception as e:
+        except (OSError, yaml.YAMLError) as e:
             print(f"Warning: Could not load config file: {e}")
             return {}
 
-    def _update_from_env(self):
-        # Optional: Load from env vars if needed, e.g., WHATSAPP_USERNAME
-        pass
-
-    def update_from_args(self, args):
+    def update_from_args(self, args) -> None:
         """Update config with command line arguments if they are provided (not None)."""
-        arg_dict = vars(args)
-        for key, value in arg_dict.items():
+        for key, value in vars(args).items():
             if value is not None:
                 self.config[key] = value
 
-    def get(self, key):
+    def get(self, key: str) -> Any:
         return self.config.get(key)
 
     @property

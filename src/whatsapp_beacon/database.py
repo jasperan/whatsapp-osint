@@ -1,34 +1,32 @@
-import sqlite3
-from typing import Dict, Optional
-from pathlib import Path
 import logging
+import sqlite3
+from pathlib import Path
+from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
+
 class Database:
-    def __init__(self, db_path: str = 'data/victims_logs.db'):
+    def __init__(self, db_path: str = 'data/victims_logs.db') -> None:
         self.db_path = Path(db_path)
-        # Ensure the directory exists
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.create_tables()
 
-    def _get_connection(self):
+    def _get_connection(self) -> sqlite3.Connection:
         """Retrieves a connection to the SQLite database."""
         return sqlite3.connect(self.db_path)
 
-    def create_tables(self):
+    def create_tables(self) -> None:
         """Creates the Users and Sessions tables if they do not exist."""
         try:
             with self._get_connection() as conn:
                 c = conn.cursor()
-                # Users Table
                 c.execute('''
                     CREATE TABLE IF NOT EXISTS Users (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_name TEXT UNIQUE
                     )
                 ''')
-                # Sessions Table
                 c.execute('''
                     CREATE TABLE IF NOT EXISTS Sessions (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,7 +79,7 @@ class Database:
             logger.error(f"Error inserting session start: {e}")
             return None
 
-    def update_session_end(self, session_id: int, end_time: Dict[str, str], time_connected: str):
+    def update_session_end(self, session_id: int, end_time: Dict[str, str], time_connected: str) -> None:
         query = '''
             UPDATE Sessions
             SET end_date = ?, end_hour = ?, end_minute = ?, end_second = ?, time_connected = ?

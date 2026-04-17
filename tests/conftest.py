@@ -54,26 +54,6 @@ def sample_config():
 
 
 @pytest.fixture
-def mock_keyboard():
-    """Mock keyboard module for testing."""
-    with patch('keyboard.is_pressed') as mock_is_pressed:
-        mock_is_pressed.return_value = False
-        yield mock_is_pressed
-
-
-@pytest.fixture(autouse=True)
-def reset_modules():
-    """Reset module imports between tests to ensure isolation."""
-    import sys
-    modules_to_reset = [
-        key for key in sys.modules.keys() 
-        if key.startswith('utils') or key == 'whatsappbeacon'
-    ]
-    for module in modules_to_reset:
-        sys.modules.pop(module, None)
-
-
-@pytest.fixture
 def capture_logs():
     """Capture log outputs during tests."""
     import logging

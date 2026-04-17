@@ -1,10 +1,11 @@
-import time
-import math
 import datetime
 import logging
+import math
 import shutil
-from pathlib import Path
 import sys
+import time
+from pathlib import Path
+from typing import Dict, List, Optional
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -78,13 +79,13 @@ _SEARCH_RESULT_XPATHS = [
 
 
 class WhatsAppBeacon:
-    def __init__(self, config: Config):
+    def __init__(self, config: Config) -> None:
         self.config = config
         self.db_path = Path(self.config.data_dir) / 'victims_logs.db'
         self.database = Database(db_path=str(self.db_path))
-        self.driver = None
+        self.driver: Optional[webdriver.Chrome] = None
 
-    def get_current_time_parts(self):
+    def get_current_time_parts(self) -> Dict[str, str]:
         """Retrieves formatted time"""
         now = datetime.datetime.now()
         return {
@@ -95,7 +96,7 @@ class WhatsAppBeacon:
             'formatted': now.strftime('%Y-%m-%d %H:%M:%S')
         }
 
-    def check_online_status(self, xpath):
+    def check_online_status(self, xpath: str) -> bool:
         """Verifies if the user is online"""
         try:
             self.driver.find_element(by=By.XPATH, value=xpath)
@@ -103,7 +104,7 @@ class WhatsAppBeacon:
         except NoSuchElementException:
             return False
 
-    def _find_first_present(self, xpaths, timeout=20):
+    def _find_first_present(self, xpaths: List[str], timeout: float = 20) -> Optional[str]:
         """
         Poll the page until one of the given XPaths is present.
         Returns the matching XPath string, or None if the timeout expires.

@@ -24,11 +24,9 @@ class Converter:
             wb = Workbook()
             ws = wb.active
 
-            # Styles
             bold = Font(bold=True, name='Arial', color="00800000", size=10)
             align = Alignment(horizontal="center")
 
-            # Column Configuration
             headers = [
                 ("A", 15, "Session ID"),
                 ("B", 17, "Username"),
@@ -46,7 +44,6 @@ class Converter:
 
             ws.title = "History Of Their Wp"
 
-            # Query to join Users and Sessions
             query = '''
                 SELECT
                     s.id,
@@ -62,13 +59,12 @@ class Converter:
             cursor.execute(query)
             all_data = cursor.fetchall()
 
-            # Add data to Excel
-            for row_idx, data in enumerate(all_data, start=2):  # Start at row 2 for headers
-                ws[f"A{row_idx}"] = data[0]  # Session ID
-                ws[f"B{row_idx}"] = data[1]  # Username
-                ws[f"C{row_idx}"] = data[2]  # Start DateTime
-                ws[f"D{row_idx}"] = data[3]  # End DateTime
-                ws[f"E{row_idx}"] = data[4]  # Time Connected
+            for row_idx, data in enumerate(all_data, start=2):
+                ws[f"A{row_idx}"] = data[0]
+                ws[f"B{row_idx}"] = data[1]
+                ws[f"C{row_idx}"] = data[2]
+                ws[f"D{row_idx}"] = data[3]
+                ws[f"E{row_idx}"] = data[4]
 
             try:
                 wb.save(self.excel_file)

@@ -52,13 +52,9 @@ def test_coverage_configuration():
 
 
 @pytest.mark.unit
-def test_mock_fixtures(mock_selenium_webdriver, mock_keyboard):
+def test_mock_fixtures(mock_selenium_webdriver):
     """Verify mock fixtures are working."""
-    # Test Selenium mock
     assert mock_selenium_webdriver is not None
-
-    # Test keyboard mock
-    assert mock_keyboard.return_value is False
 
 
 @pytest.mark.unit

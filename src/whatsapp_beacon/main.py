@@ -23,11 +23,9 @@ def main():
 
     args = parser.parse_args()
 
-    # Load configuration
     config = Config(config_file=args.config)
     config.update_from_args(args)
 
-    # Setup Logging
     setup_logging(log_level=config.log_level)
 
     if args.analytics:
@@ -37,13 +35,11 @@ def main():
         print(f"Analytics dashboard written to {output_path}")
         sys.exit(0)
 
-    # Check requirements
     if not config.username:
         print("Error: Username is required. Set it in config.yaml or use --username.")
         parser.print_help()
         sys.exit(1)
 
-    # Run Beacon
     beacon = WhatsAppBeacon(config)
     beacon.run()
 
