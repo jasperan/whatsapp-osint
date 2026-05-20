@@ -74,3 +74,5 @@ markers = [
   "integration: mark test as an integration test",
   "slow: mark test as slow running",
 ]
+
+[tool.uv]
