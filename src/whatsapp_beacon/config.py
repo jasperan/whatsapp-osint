@@ -41,29 +41,12 @@ class Config:
     def get(self, key: str) -> Any:
         return self.config.get(key)
 
-    @property
-    def username(self): return self.config.get('username')
-
-    @property
-    def language(self): return self.config.get('language')
-
-    @property
-    def excel(self): return self.config.get('excel')
-
-    @property
-    def headless(self): return self.config.get('headless')
-
-    @property
-    def browser(self): return self.config.get('browser')
-
-    @property
-    def data_dir(self): return self.config.get('data_dir')
-
-    @property
-    def chrome_driver_path(self): return self.config.get('chrome_driver_path')
-
-    @property
-    def chrome_binary_path(self): return self.config.get('chrome_binary_path')
-
-    @property
-    def log_level(self): return self.config.get('log_level')
+    def __getattr__(self, name: str) -> Any:
+        # Expose every known config key (e.g. ``config.username``) as a
+        # read-only attribute backed by the merged settings dict. ``__getattr__``
+        # only fires for names not found via normal lookup, so ``self.config``
+        # and real methods are unaffected. Unknown names still raise AttributeError.
+        config = self.__dict__.get('config', {})
+        if name in config:
+            return config[name]
+        raise AttributeError(name)
