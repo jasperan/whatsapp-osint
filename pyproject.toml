@@ -61,6 +61,9 @@ whatsapp-osint = "whatsapp_beacon.main:main"
 [tool.setuptools]
 package-dir = {"" = "src"}
 
+[tool.setuptools.package-data]
+whatsapp_beacon = ["dashboard.html"]
+
 [tool.setuptools.dynamic]
 version = { attr = "whatsapp_beacon.__version__" }
 

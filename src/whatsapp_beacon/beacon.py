@@ -86,14 +86,13 @@ class WhatsAppBeacon:
         self.driver: Optional[webdriver.Chrome] = None
 
     def get_current_time_parts(self) -> Dict[str, str]:
-        """Retrieves formatted time"""
+        """Retrieves the current time split into date/hour/minute/second parts."""
         now = datetime.datetime.now()
         return {
             'date': now.strftime('%Y-%m-%d'),
             'hour': now.strftime('%H'),
             'minute': now.strftime('%M'),
             'second': now.strftime('%S'),
-            'formatted': now.strftime('%Y-%m-%d %H:%M:%S')
         }
 
     def check_online_status(self, xpath: str) -> bool:
@@ -363,7 +362,6 @@ class WhatsAppBeacon:
 
         previous_state = 'OFFLINE'
         first_online = 0
-        cumulative_session_time = 0
         current_session_id = None
 
         try:
@@ -379,11 +377,9 @@ class WhatsAppBeacon:
 
                 elif not is_online and previous_state == 'ONLINE':
                     total_online_time = time.time() - first_online
-                    if total_online_time >= 0 and current_session_id:
-                        cumulative_session_time += total_online_time
+                    if current_session_id:
                         logger.info(
-                            f"[DISCONNECTED] {user} was online for {math.floor(total_online_time)} seconds. "
-                            f"Session total: {math.floor(cumulative_session_time)} seconds"
+                            f"[DISCONNECTED] {user} was online for {math.floor(total_online_time)} seconds."
                         )
                         self.database.update_session_end(
                             current_session_id, time_parts, str(round(total_online_time))
