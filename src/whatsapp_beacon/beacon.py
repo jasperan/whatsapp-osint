@@ -119,7 +119,7 @@ class WhatsAppBeacon:
             time.sleep(0.5)
         return None
 
-    def find_user_chat(self, user):
+    def find_user_chat(self, user: str) -> bool:
         """Search and goes to the user's chat"""
         try:
             search_xpath = self._find_first_present(_SEARCH_BOX_XPATHS, timeout=20)
