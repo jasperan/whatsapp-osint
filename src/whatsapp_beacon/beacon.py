@@ -25,6 +25,7 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from .database import Database
 from .db_to_excel import Converter
 from .config import Config
+from .presence import PresenceParser
 
 logger = logging.getLogger(__name__)
 
@@ -78,12 +79,32 @@ _SEARCH_RESULT_XPATHS = [
 ]
 
 
+# XPath candidates for the contact's presence / status subtitle.
+# The chat header shows "online", "last seen …" or "typing…" under the
+# contact name; the sidebar row shows the same on some builds. Best-effort:
+# if none match, presence capture is simply skipped for that poll.
+_STATUS_XPATHS = [
+    # Chat header status subtitle (title attribute on some builds, text on others)
+    '//header//span[contains(@title, "last seen") or contains(@title, "online") or contains(@title, "typing")]',
+    '//div[@data-testid="conversation-info-header"]//span[contains(@class, "status")]',
+    '//header//div[@data-testid="conversation-info-header"]//span',
+    '//header//span[contains(@class, "status")]',
+    # Sidebar subtitle fallback for the tracked chat
+    '//*[@id="pane-side"]//span[contains(@title, "last seen") or contains(@title, "online")]',
+]
+
+
 class WhatsAppBeacon:
     def __init__(self, config: Config) -> None:
         self.config = config
         self.db_path = Path(self.config.data_dir) / 'victims_logs.db'
         self.database = Database(db_path=str(self.db_path))
         self.driver: Optional[webdriver.Chrome] = None
+        # Presence-capture state (cached status xpath + write throttling)
+        self._last_status_xpath: Optional[str] = None
+        self._last_status_probe_ts: float = 0.0
+        self._last_presence_key: Optional[tuple] = None
+        self._last_presence_ts: float = 0.0
 
     def get_current_time_parts(self) -> Dict[str, str]:
         """Retrieves the current time split into date/hour/minute/second parts."""
@@ -322,6 +343,81 @@ class WhatsAppBeacon:
             logger.error(f"Error loading WhatsApp Web: {e}")
             raise  # propagate so run() can clean up instead of stumbling forward
 
+    def _element_text_or_title(self, element) -> str:
+        """Reads an element's visible text, falling back to its title attribute."""
+        try:
+            text = (element.text or '').strip()
+            if text:
+                return text
+        except WebDriverException:
+            pass
+        try:
+            return (element.get_attribute('title') or '').strip()
+        except WebDriverException:
+            return ''
+
+    def _read_status_text(self) -> str:
+        """Reads the current presence / status subtitle, if visible."""
+        if self._last_status_xpath:
+            try:
+                element = self.driver.find_element(By.XPATH, self._last_status_xpath)
+                text = self._element_text_or_title(element)
+                if text:
+                    return text
+            except (NoSuchElementException, WebDriverException):
+                self._last_status_xpath = None
+
+        # No cached xpath (or it went stale). Re-probe, but at most every 10s
+        # so a DOM change cannot stall the 1-second polling loop.
+        now = time.time()
+        if now - self._last_status_probe_ts < 10:
+            return ''
+        self._last_status_probe_ts = now
+
+        found = self._find_first_present(_STATUS_XPATHS, timeout=3)
+        if not found:
+            return ''
+        self._last_status_xpath = found
+        try:
+            element = self.driver.find_element(By.XPATH, found)
+            return self._element_text_or_title(element)
+        except (NoSuchElementException, WebDriverException):
+            return ''
+
+    def _maybe_capture_presence(self, user_id: int) -> None:
+        """Best-effort recording of the contact's presence text.
+
+        Persists a row when the parsed signal changes, or when 30 seconds have
+        passed since the last write. Failures never break the tracking loop.
+        """
+        try:
+            text = self._read_status_text()
+            if not text:
+                return
+            snapshot = PresenceParser(language=self.config.language).parse(text)
+        except Exception:  # noqa: BLE001 - presence capture is best-effort
+            return
+
+        key = (snapshot.kind, snapshot.text)
+        now = time.time()
+        if key == self._last_presence_key and (now - self._last_presence_ts) < 30:
+            return
+
+        time_parts = self.get_current_time_parts()
+        observed_at = (
+            f"{time_parts['date']} {time_parts['hour']}:"
+            f"{time_parts['minute']}:{time_parts['second']}"
+        )
+        self.database.insert_presence(
+            user_id=user_id,
+            observed_at=observed_at,
+            status_kind=snapshot.kind,
+            status_text=snapshot.text,
+            last_seen=snapshot.last_seen,
+        )
+        self._last_presence_key = key
+        self._last_presence_ts = now
+
     def run(self):
         """Main execution loop."""
         if self.config.excel:
@@ -352,6 +448,9 @@ class WhatsAppBeacon:
             return
 
         user_id = self.database.get_or_create_user(user)
+        # Close any sessions left open by a crashed/killed previous run so they
+        # stop inflating analytics with a never-ending "in progress" session.
+        self.database.close_open_sessions(self.get_current_time_parts())
         online_lower = ONLINE_STATUS[language].lower()
         xpath = (
             f"//span[contains(translate(@title,"
@@ -386,6 +485,9 @@ class WhatsAppBeacon:
                         )
                         previous_state = 'OFFLINE'
                         current_session_id = None
+
+                # Passive presence evidence ("last seen …", typing, online)
+                self._maybe_capture_presence(user_id)
 
                 time.sleep(1)
 
