@@ -35,6 +35,11 @@ python3 -m src.whatsapp_beacon.main --analytics
 # Export to Excel
 python3 -m src.whatsapp_beacon.main -u "Contact Name" --excel
 
+# Passive presence queries (no browser needed):
+python3 -m src.whatsapp_beacon.main --last-seen
+python3 -m src.whatsapp_beacon.main -u "Contact Name" --last-seen
+python3 -m src.whatsapp_beacon.main --export-json export.json
+
 # After pip install (two aliases registered):
 whatsapp-beacon -u "Contact Name"
 whatsapp-osint -u "Contact Name"
@@ -54,9 +59,10 @@ Package lives in `src/whatsapp_beacon/`:
 
 - **`config.py` (`Config`)**: Settings loaded in priority order: defaults → `config.yaml` → CLI args. Key config keys: `username`, `language`, `headless`, `excel`, `browser`, `log_level`, `data_dir`, `chrome_binary_path`, `split_char`. No env var support yet.
 - **`beacon.py` (`WhatsAppBeacon`)**: Core class. Manages Selenium driver, WhatsApp Web login, contact search, and the polling loop. Multi-language online status detection via `ONLINE_STATUS` dict (en/de/pt/es/fr/it/cat/tr).
-- **`database.py` (`Database`)**: SQLite wrapper. Two tables: `Users` (user_name) and `Sessions` (start/end timestamps, duration). Timestamps split across separate date/hour/minute/second columns, not a single column.
-- **`analytics.py` (`AnalyticsDashboard`)**: Reads Sessions+Users, computes per-contact stats, and renders a self-contained HTML dashboard to `analytics/index.html`. Handles in-progress sessions (NULL end_date) by substituting current time.
-- **`db_to_excel.py` (`Converter`)**: Reads Sessions+Users via JOIN, writes `History_wp.xlsx` with openpyxl.
+- **`database.py` (`Database`)**: SQLite wrapper. Three tables: `Users` (user_name), `Sessions` (start/end timestamps, duration), and `Presence` (passive presence observations: observed_at, status_kind, status_text, last_seen). Timestamps split across separate date/hour/minute/second columns, not a single column. `close_open_sessions()` closes sessions orphaned by a crashed/killed run at next startup.
+- **`analytics.py` (`AnalyticsDashboard`)**: Reads Sessions+Users, computes per-contact stats, and renders a self-contained HTML dashboard to `analytics/index.html`. Handles in-progress sessions (NULL end_date) by substituting current time. Also ingests the `Presence` table: per-contact last-seen labels, presence observation counts, a schedule-regularity score (0-100, std of daily first-session starts), and a "presence trail" panel in the dashboard.
+- **`db_to_excel.py` (`Converter`)**: Reads Sessions+Users via JOIN, writes `History_wp.xlsx` with openpyxl (sessions sheet + a `Presence` sheet). Also exposes `export_json()` for pipeline-friendly JSON dumps of sessions + presence.
+- **`presence.py` (`PresenceParser`)**: Parses WhatsApp Web status strings ("online", "last seen today/yesterday/on <date> at HH:MM", "typing…") into structured snapshots. Multilingual (en/es/de/fr/it/pt/cat/tr), always preserves the raw text, degrades to `other` for unknown wording.
 - **`logger.py`**: colorlog console handler + plain file handler → `logs/whatsapp_beacon.log`.
 - **`main.py`**: Parses args, builds `Config`, dispatches to `WhatsAppBeacon.run()` or `AnalyticsDashboard`.
 
@@ -80,7 +86,10 @@ Chrome session is persisted in `data/chrome_profile`. First run must be non-head
 `config.yaml` `browser` key accepts `chrome`, `firefox`, or `edge`. ChromeDriver is auto-managed by `webdriver-manager`; Firefox requires geckodriver on PATH.
 
 ### Adding a New Language
-Add an entry to the `ONLINE_STATUS` dict in `beacon.py` with the ISO language code and the localized "online" string as it appears in WhatsApp Web.
+Add an entry to the `ONLINE_STATUS` dict in `beacon.py` with the ISO language code and the localized "online" string as it appears in WhatsApp Web. For "last seen" parsing, also add matching entries to `ONLINE_WORDS`, `LAST_SEEN_STEMS`, `TODAY_WORDS`, and `YESTERDAY_WORDS` in `presence.py`.
+
+### Presence Capture (best-effort)
+During the tracking loop, `WhatsAppBeacon._maybe_capture_presence()` reads the contact's status subtitle (see `_STATUS_XPATHS` in `beacon.py`), parses it, and persists a `Presence` row when the signal changes or every 30s. Failures never break the polling loop; if the DOM changes, update `_STATUS_XPATHS` like the other XPath candidate lists.
 
 ### Fixing Broken XPaths (WhatsApp DOM Changes)
 WhatsApp Web updates its DOM periodically. When selectors break, update the three candidate lists near the top of `beacon.py`:
