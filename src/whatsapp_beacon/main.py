@@ -4,6 +4,8 @@ from pathlib import Path
 from .analytics import AnalyticsDashboard
 from .config import Config
 from .beacon import WhatsAppBeacon
+from .database import Database
+from .db_to_excel import export_json
 from .logger import setup_logging
 
 def main():
@@ -19,6 +21,10 @@ def main():
     parser.add_argument('--analytics', help="Generate the analytics dashboard and exit", action='store_true')
     parser.add_argument('--analytics-output', dest='analytics_output', default='analytics/index.html',
                         help="Output path for the analytics dashboard HTML file")
+    parser.add_argument('--export-json', dest='export_json', default=None,
+                        help="Export sessions and presence signals to a JSON file and exit (no browser needed)")
+    parser.add_argument('--last-seen', dest='last_seen', action='store_true',
+                        help="Print the latest presence signal per contact and exit (no browser needed)")
     parser.add_argument('--config', help="Path to config file", default='config.yaml')
 
     args = parser.parse_args()
@@ -33,6 +39,26 @@ def main():
         dashboard = AnalyticsDashboard(db_path=str(db_path), output_file=args.analytics_output)
         output_path = dashboard.export()
         print(f"Analytics dashboard written to {output_path}")
+        sys.exit(0)
+
+    if args.export_json:
+        db_path = Path(config.data_dir) / 'victims_logs.db'
+        output_path = export_json(db_path=str(db_path), output_path=args.export_json)
+        print(f"JSON export written to {output_path}")
+        sys.exit(0)
+
+    if args.last_seen:
+        db_path = Path(config.data_dir) / 'victims_logs.db'
+        latest = Database(db_path=str(db_path)).get_latest_presence_by_user()
+        if not latest:
+            print("No presence data recorded yet. Run the tracker once to start collecting.")
+            sys.exit(0)
+        filter_name = (config.username or '').strip()
+        for name in sorted(latest):
+            if filter_name and name != filter_name:
+                continue
+            snapshot = latest[name]
+            print(f"{name}: {snapshot['status_text']} (observed {snapshot['observed_at']})")
         sys.exit(0)
 
     if not config.username:

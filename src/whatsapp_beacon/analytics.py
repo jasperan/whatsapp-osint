@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -73,6 +74,67 @@ class AnalyticsDashboard:
                 })
         return sessions
 
+    def _load_presence(self) -> List[Dict[str, Any]]:
+        """Loads presence observations (oldest → newest), joined with contacts."""
+        if not self.db_path.exists():
+            return []
+        query = '''
+            SELECT
+                u.user_name,
+                p.observed_at,
+                p.status_kind,
+                p.status_text,
+                p.last_seen
+            FROM Presence p
+            JOIN Users u ON p.user_id = u.id
+            ORDER BY p.observed_at ASC, p.id ASC
+        '''
+        rows: List[Dict[str, Any]] = []
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query)
+                for row in cursor.fetchall():
+                    rows.append({
+                        'user_name': row[0],
+                        'observed_at': row[1],
+                        'status_kind': row[2],
+                        'status_text': row[3],
+                        'last_seen': row[4],
+                    })
+        except sqlite3.Error:
+            return []
+        return rows
+
+    @staticmethod
+    def _regularity_score(sessions: List[Dict[str, Any]]) -> Optional[int]:
+        """Estimates how predictable a contact's schedule is (0-100).
+
+        Uses the first session start of each tracked day. The score is
+        ``max(0, 100 - std / 3)`` where ``std`` is the standard deviation of
+        daily first-start times in minutes: a 30-minute spread scores ~90,
+        a 3-hour spread scores ~40, and anything past 5 hours scores 0.
+        Fewer than two tracked days yields ``None`` (unknown).
+        """
+        first_times: Dict[str, int] = {}
+        for session in sessions:
+            date = session['date']
+            if date in first_times:
+                continue
+            try:
+                hour, minute = session['start_iso'][11:16].split(':')
+            except (ValueError, IndexError):
+                continue
+            first_times[date] = int(hour) * 60 + int(minute)
+
+        if len(first_times) < 2:
+            return None
+        values = list(first_times.values())
+        mean = sum(values) / len(values)
+        variance = sum((value - mean) ** 2 for value in values) / len(values)
+        std_minutes = math.sqrt(variance)
+        return int(max(0, round(100 - std_minutes / 3.0)))
+
     def build_payload(self) -> Dict[str, Any]:
         sessions = self._load_sessions()
         total_seconds = sum(session['duration_seconds'] for session in sessions)
@@ -138,6 +200,39 @@ class AnalyticsDashboard:
             key=lambda item: (-item['total_seconds'], item['user_name'].lower()),
         )
 
+        # Presence intelligence: per-contact last-seen evidence, observation
+        # counts, and a schedule-regularity estimate derived from session starts.
+        presence_list = self._load_presence()
+        presence_trail = presence_list[-25:]
+        latest_presence_label: Dict[str, str] = {}
+        presence_counts: Dict[str, int] = {}
+        for row in presence_list:
+            name = row['user_name']
+            presence_counts[name] = presence_counts.get(name, 0) + 1
+            if row['status_kind'] == 'online':
+                latest_presence_label[name] = f"Online {row['observed_at']}"
+            elif row['status_kind'] == 'last_seen':
+                if row.get('last_seen'):
+                    latest_presence_label[name] = f"Last seen {row['last_seen']}"
+                else:
+                    latest_presence_label[name] = f"Last seen ~{row['observed_at']}"
+
+        user_sessions: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        for session in sessions:
+            user_sessions[session['user_name']].append(session)
+
+        for user in users:
+            name = user['user_name']
+            user['presence_count'] = presence_counts.get(name, 0)
+            if name in latest_presence_label:
+                user['last_seen_label'] = latest_presence_label[name]
+            elif user.get('last_seen'):
+                user['last_seen_label'] = f"Last session {user['last_seen']}"
+            else:
+                user['last_seen_label'] = None
+            user['regularity_score'] = self._regularity_score(user_sessions.get(name, []))
+            user['active_days'] = len({session['date'] for session in user_sessions.get(name, [])})
+
         daily_activity = [
             {
                 'date': date,
@@ -186,6 +281,7 @@ class AnalyticsDashboard:
             ],
             'recent_sessions': recent_sessions,
             'top_sessions': top_sessions,
+            'presence_trail': presence_trail,
         }
 
     def export(self) -> Path:

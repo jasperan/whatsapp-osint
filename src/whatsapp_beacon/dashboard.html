@@ -374,6 +374,12 @@
         <div id="top-sessions"></div>
       </article>
     </section>
+
+    <section class="panel" style="margin-bottom: 20px;">
+      <h2>Presence trail</h2>
+      <p class="lead">Raw presence signals captured by the tracker: every observed "online", "last seen …" and "typing…" status. This is the evidence between sessions — it shows when a contact was active even when no session was recorded.</p>
+      <div id="presence-trail"></div>
+    </section>
   </main>
 
   <script>
@@ -517,19 +523,23 @@
         return;
       }
 
-      byId('leaderboard').innerHTML = users.slice(0, 6).map((user, index) => `
-        <div class="leaderboard-item">
-          <div class="leaderboard-rank">${index + 1}</div>
-          <div>
-            <strong>${user.user_name}</strong>
-            <span>${user.session_count} session${user.session_count === 1 ? '' : 's'} · avg ${formatDuration(user.average_seconds)}</span>
+      byId('leaderboard').innerHTML = users.slice(0, 6).map((user, index) => {
+        const regularity = user.regularity_score == null ? 'regularity —' : `regularity ${user.regularity_score}/100`;
+        const lastSeen = user.last_seen_label || 'last seen —';
+        return `
+          <div class="leaderboard-item">
+            <div class="leaderboard-rank">${index + 1}</div>
+            <div>
+              <strong>${user.user_name}</strong>
+              <span>${user.session_count} session${user.session_count === 1 ? '' : 's'} · avg ${formatDuration(user.average_seconds)} · ${regularity}</span>
+            </div>
+            <div class="leaderboard-stat">
+              <strong>${formatDuration(user.total_seconds)}</strong>
+              <span>${lastSeen}</span>
+            </div>
           </div>
-          <div class="leaderboard-stat">
-            <strong>${formatDuration(user.total_seconds)}</strong>
-            <span>Longest ${formatDuration(user.longest_seconds)}</span>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     function renderHeatmap(rows) {
@@ -595,6 +605,37 @@
       `;
     }
 
+    function renderPresenceTrail(rows) {
+      const container = byId('presence-trail');
+      if (!rows.length) {
+        container.innerHTML = '<div class="empty-state">No presence signals recorded yet. They start accumulating the next time the tracker runs — status text like "last seen today at 14:32" is stored between sessions.</div>';
+        return;
+      }
+
+      container.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Contact</th>
+              <th>Observed</th>
+              <th>Status</th>
+              <th>Last seen (parsed)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((row) => `
+              <tr>
+                <td>${row.user_name}</td>
+                <td class="muted">${row.observed_at}</td>
+                <td>${row.status_text}</td>
+                <td class="muted">${row.last_seen || '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
     function render(view) {
       renderMetrics(view.summary);
       renderDailyBars(view.daily_activity);
@@ -603,6 +644,11 @@
       renderBuckets(view.duration_buckets);
       renderTable('recent-sessions', view.recent_sessions);
       renderTable('top-sessions', view.top_sessions);
+
+      const presenceRows = state.user === 'all'
+        ? dashboardData.presence_trail
+        : dashboardData.presence_trail.filter((row) => row.user_name === state.user);
+      renderPresenceTrail(presenceRows);
 
       const scopeLabel = state.user === 'all' ? 'the full dataset' : `only ${state.user}`;
       byId('controls-copy').textContent = `You are viewing ${scopeLabel}. The cards and charts below are recalculated live inside this static report.`;
