@@ -126,3 +126,108 @@ def test_setup_driver_uses_resolved_chrome_binary(config, mock_driver, mock_reso
 
     options = mock_driver.call_args.kwargs['options']
     assert options.binary_location == '/usr/bin/chromium'
+
+
+def _beacon_with_mocked_status(config, status_text):
+    """Builds a beacon whose driver reports a fixed status text."""
+    beacon = WhatsAppBeacon(config)
+    beacon.driver = MagicMock()
+    element = MagicMock()
+    element.text = status_text
+    element.get_attribute.return_value = None
+    beacon.driver.find_element.return_value = element
+    return beacon
+
+
+def test_element_text_or_title_prefers_text(config):
+    beacon = WhatsAppBeacon(config)
+    element = MagicMock()
+    element.text = 'last seen today at 14:32'
+    element.get_attribute.return_value = 'title text'
+    assert beacon._element_text_or_title(element) == 'last seen today at 14:32'
+
+
+def test_element_text_or_title_falls_back_to_title(config):
+    beacon = WhatsAppBeacon(config)
+    element = MagicMock()
+    element.text = ''
+    element.get_attribute.return_value = 'online'
+    assert beacon._element_text_or_title(element) == 'online'
+
+
+def test_read_status_text_uses_cached_xpath(config):
+    beacon = WhatsAppBeacon(config)
+    beacon.driver = MagicMock()
+    element = MagicMock()
+    element.text = 'last seen today at 14:32'
+    element.get_attribute.return_value = None
+    beacon.driver.find_element.return_value = element
+
+    beacon._last_status_xpath = '//header//span'
+    assert beacon._read_status_text() == 'last seen today at 14:32'
+
+
+def test_maybe_capture_presence_persists_on_new_signal(config):
+    beacon = _beacon_with_mocked_status(config, 'last seen today at 14:32')
+    beacon.database = MagicMock()
+
+    beacon._maybe_capture_presence(user_id=7)
+
+    beacon.database.insert_presence.assert_called_once()
+    kwargs = beacon.database.insert_presence.call_args.kwargs
+    assert kwargs['user_id'] == 7
+    assert kwargs['status_kind'] == 'last_seen'
+    assert kwargs['status_text'] == 'last seen today at 14:32'
+    assert kwargs['last_seen'] is not None
+
+
+def test_maybe_capture_presence_throttles_identical_signal(config):
+    beacon = _beacon_with_mocked_status(config, 'online')
+    beacon.database = MagicMock()
+
+    beacon._maybe_capture_presence(user_id=7)
+    beacon._maybe_capture_presence(user_id=7)  # identical text, no time passed
+
+    beacon.database.insert_presence.assert_called_once()
+
+
+def test_maybe_capture_presence_records_again_after_30s(config):
+    beacon = _beacon_with_mocked_status(config, 'online')
+    beacon.database = MagicMock()
+
+    beacon._maybe_capture_presence(user_id=7)
+    beacon._last_presence_ts -= 31  # simulate 31 elapsed seconds
+    beacon._maybe_capture_presence(user_id=7)
+
+    assert beacon.database.insert_presence.call_count == 2
+
+
+def test_maybe_capture_presence_skips_empty_status(config):
+    beacon = _beacon_with_mocked_status(config, '')
+    beacon.database = MagicMock()
+
+    beacon._maybe_capture_presence(user_id=7)
+    beacon.database.insert_presence.assert_not_called()
+
+
+def test_run_closes_orphaned_sessions_at_startup(config):
+    beacon = WhatsAppBeacon(config)
+
+    def fake_setup_driver(self):
+        self.driver = MagicMock()
+        self.driver.find_element.return_value.text = ''  # no presence text
+
+    beacon.database = MagicMock()
+    beacon.database.get_or_create_user.return_value = 3
+
+    with (
+        patch.object(WhatsAppBeacon, 'setup_driver', fake_setup_driver),
+        patch.object(WhatsAppBeacon, 'whatsapp_login'),
+        patch.object(WhatsAppBeacon, 'find_user_chat', return_value=True),
+        patch('src.whatsapp_beacon.beacon.time.sleep'),
+        patch.object(WhatsAppBeacon, 'check_online_status', side_effect=[False, KeyboardInterrupt]),
+    ):
+        beacon.run()
+
+    beacon.database.close_open_sessions.assert_called_once()
+    beacon.driver.quit.assert_called_once()
