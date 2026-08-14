@@ -152,6 +152,7 @@ cython_debug/
 .agents/
 .crush/
 .omc/
+.omx/
 .openhands/
 .pi/
 .serena/

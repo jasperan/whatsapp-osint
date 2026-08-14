@@ -40,8 +40,11 @@
 - **Automated browser driver resolution**: Selenium Manager handles matching drivers, with manual override flags if you need them.
 - **Headless tracking**: authenticate once, then run quietly in the background.
 - **SQLite session history**: every finished online session is stored locally.
-- **Excel export**: turn the database into `History_wp.xlsx`.
-- **Advanced analytics dashboard**: generate a static HTML report with filters, heatmaps, leaderboards, and recent-session views.
+- **Presence intelligence**: while tracking, the tool passively records WhatsApp's rich status signals — "online", "last seen today/yesterday at HH:MM", "last seen on \<date\>", "typing…" — so you keep evidence of when a contact was last active even between sessions.
+- **Excel export**: turn the database into `History_wp.xlsx` (sessions + presence worksheets).
+- **JSON export**: dump sessions + presence to JSON for pipelines.
+- **`--last-seen` CLI**: query the latest presence evidence per contact with no browser needed.
+- **Advanced analytics dashboard**: generate a static HTML report with filters, heatmaps, leaderboards, per-contact regularity scores, recent-session views, and a presence trail.
 
 ---
 
@@ -166,12 +169,36 @@ open analytics/index.html
 The dashboard includes:
 
 - top-level KPIs
-- per-contact leaderboard
+- per-contact leaderboard with **last-seen evidence** and a **schedule-regularity score** (0-100)
 - daily online-time bars
 - weekday/hour heatmap
 - duration distribution
 - recent sessions and longest sessions tables
+- a **presence trail** panel showing every recorded presence signal
 - live filtering by contact inside the page
+
+## 👁️ Presence intelligence
+
+Beyond online/offline blocks, the tracker records the status text WhatsApp shows for a contact ("online", "last seen today at 14:32", "last seen yesterday at 21:05", "last seen on 12/31/2025 at 23:59", "typing…"). This fills the gaps between sessions with actionable evidence.
+
+Query the latest evidence per contact without launching a browser:
+
+```bash
+# All contacts
+whatsapp-beacon --last-seen
+# Single contact
+whatsapp-beacon -u "Maria" --last-seen
+```
+
+Export everything to JSON for your own tooling:
+
+```bash
+whatsapp-beacon --export-json export.json
+```
+
+The JSON contains `sessions` (per-session online blocks) and `presence` (per-observation status signals with parsed `last_seen` timestamps).
+
+The Excel export (`--excel`) also gains a **Presence** worksheet alongside the session history.
 
 ---
 
@@ -207,6 +234,8 @@ Same dashboard, narrowed to one contact to show the live filter state.
 | `--chrome-binary-path` | Explicit path to Chrome or Chromium. | Auto-detect |
 | `--analytics` | Generate the analytics dashboard and exit. | `False` |
 | `--analytics-output` | Output path for the analytics HTML report. | `analytics/index.html` |
+| `--export-json` | Export sessions + presence to a JSON file and exit (no browser needed). | Off |
+| `--last-seen` | Print the latest presence signal per contact and exit (no browser needed). | `False` |
 | `--config` | Path to a custom config file. | `config.yaml` |
 
 ---
