@@ -34,21 +34,20 @@ def main():
 
     setup_logging(log_level=config.log_level)
 
+    db_path = Path(config.data_dir) / 'victims_logs.db'
+
     if args.analytics:
-        db_path = Path(config.data_dir) / 'victims_logs.db'
         dashboard = AnalyticsDashboard(db_path=str(db_path), output_file=args.analytics_output)
         output_path = dashboard.export()
         print(f"Analytics dashboard written to {output_path}")
         sys.exit(0)
 
     if args.export_json:
-        db_path = Path(config.data_dir) / 'victims_logs.db'
         output_path = export_json(db_path=str(db_path), output_path=args.export_json)
         print(f"JSON export written to {output_path}")
         sys.exit(0)
 
     if args.last_seen:
-        db_path = Path(config.data_dir) / 'victims_logs.db'
         latest = Database(db_path=str(db_path)).get_latest_presence_by_user()
         if not latest:
             print("No presence data recorded yet. Run the tracker once to start collecting.")

@@ -124,3 +124,24 @@ def test_get_latest_presence_by_user_returns_most_recent(db):
     assert latest['Alice']['status_kind'] == 'online'
     assert latest['Alice']['observed_at'] == '2026-08-14 08:00:00'
     assert latest['Bob']['last_seen'] == '2026-08-13 22:00:00'
+
+
+def test_compose_session_datetime_combines_parts():
+    from src.whatsapp_beacon.database import compose_session_datetime
+
+    dt = compose_session_datetime('2026-08-14', '07', '05', '09')
+    assert dt.strftime('%Y-%m-%d %H:%M:%S') == '2026-08-14 07:05:09'
+
+
+def test_get_latest_presence_by_user_uses_single_row_per_user(db):
+    alice = db.get_or_create_user("Alice")
+    db.insert_presence(alice, '2026-08-14 07:00:00', 'last_seen', 'last seen today at 06:59', '2026-08-14 06:59:00')
+    db.insert_presence(alice, '2026-08-14 08:00:00', 'online', 'online', None)
+    # A later insert for Alice must win, and Bob's own latest must be returned.
+    bob = db.get_or_create_user("Bob")
+    db.insert_presence(bob, '2026-08-14 09:00:00', 'typing', 'typing…', None)
+
+    latest = db.get_latest_presence_by_user()
+    assert set(latest) == {'Alice', 'Bob'}
+    assert latest['Alice']['observed_at'] == '2026-08-14 08:00:00'
+    assert latest['Bob']['status_kind'] == 'typing'

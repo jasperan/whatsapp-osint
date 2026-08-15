@@ -6,6 +6,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from .database import Database
+
 logger = logging.getLogger(__name__)
 
 class Converter:
@@ -76,25 +78,7 @@ class Converter:
                     cell.alignment = align
                     cell.value = title
 
-                presence_query = '''
-                    SELECT
-                        u.user_name,
-                        p.observed_at,
-                        p.status_kind,
-                        p.status_text,
-                        p.last_seen
-                    FROM Presence p
-                    JOIN Users u ON p.user_id = u.id
-                    ORDER BY p.observed_at DESC, p.id DESC
-                '''
-                presence_data = []
-                try:
-                    cursor.execute(presence_query)
-                    presence_data = cursor.fetchall()
-                except sqlite3.Error as e:
-                    # Databases created by older versions have no Presence
-                    # table; the sessions export must still succeed.
-                    logger.warning(f"Presence worksheet unavailable: {e}")
+                presence_data = list(reversed(Database(str(self.db_path)).get_presence_history()))
 
             for row_idx, data in enumerate(all_data, start=2):
                 ws[f"A{row_idx}"] = data[0]
@@ -104,11 +88,11 @@ class Converter:
                 ws[f"E{row_idx}"] = data[4]
 
             for row_idx, data in enumerate(presence_data, start=2):
-                ws2[f"A{row_idx}"] = data[0]
-                ws2[f"B{row_idx}"] = data[1]
-                ws2[f"C{row_idx}"] = data[2]
-                ws2[f"D{row_idx}"] = data[3]
-                ws2[f"E{row_idx}"] = data[4]
+                ws2[f"A{row_idx}"] = data['user_name']
+                ws2[f"B{row_idx}"] = data['observed_at']
+                ws2[f"C{row_idx}"] = data['status_kind']
+                ws2[f"D{row_idx}"] = data['status_text']
+                ws2[f"E{row_idx}"] = data['last_seen']
 
             try:
                 self.excel_file.parent.mkdir(parents=True, exist_ok=True)
@@ -154,27 +138,11 @@ def export_json(db_path: str = 'data/victims_logs.db', output_path: str = 'analy
                         'end_datetime': row[2],
                         'time_connected': row[3],
                     })
-                cursor.execute('''
-                    SELECT
-                        u.user_name,
-                        p.observed_at,
-                        p.status_kind,
-                        p.status_text,
-                        p.last_seen
-                    FROM Presence p
-                    JOIN Users u ON p.user_id = u.id
-                    ORDER BY p.observed_at ASC, p.id ASC
-                ''')
-                for row in cursor.fetchall():
-                    payload['presence'].append({
-                        'user_name': row[0],
-                        'observed_at': row[1],
-                        'status_kind': row[2],
-                        'status_text': row[3],
-                        'last_seen': row[4],
-                    })
         except sqlite3.Error as e:
             logger.error(f"Database error during JSON export: {e}")
+        # Presence rows come from the canonical Database accessor so the query
+        # and row shape stay defined in exactly one place.
+        payload['presence'] = Database(db_path=str(db)).get_presence_history()
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')

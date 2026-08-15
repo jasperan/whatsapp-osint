@@ -231,3 +231,32 @@ def test_run_closes_orphaned_sessions_at_startup(config):
 
     beacon.database.close_open_sessions.assert_called_once()
     beacon.driver.quit.assert_called_once()
+
+
+def test_online_status_is_single_source_of_truth(config):
+    """ONLINE_STATUS must be the same dict as presence.ONLINE_WORDS.
+
+    The tracker's online-detection XPath and the presence parser share one
+    language mapping; if they ever diverge, online XPath probing and parsing
+    would disagree about what 'online' means per locale.
+    """
+    from src.whatsapp_beacon import beacon as beacon_module
+    from src.whatsapp_beacon.presence import ONLINE_WORDS
+
+    assert beacon_module.ONLINE_STATUS is ONLINE_WORDS
+
+
+def test_status_text_from_returns_text_or_empty(config):
+    from selenium.common.exceptions import NoSuchElementException
+
+    beacon = WhatsAppBeacon(config)
+    beacon.driver = MagicMock()
+    element = MagicMock()
+    element.text = 'online'
+    element.get_attribute.return_value = None
+
+    beacon.driver.find_element.return_value = element
+    assert beacon._status_text_from('//span') == 'online'
+
+    beacon.driver.find_element.side_effect = NoSuchElementException('gone')
+    assert beacon._status_text_from('//span') == ''
