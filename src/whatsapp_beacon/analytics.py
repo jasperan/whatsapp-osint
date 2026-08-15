@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
+from .database import Database, compose_session_datetime
+
 
 class AnalyticsDashboard:
     def __init__(self, db_path: str = 'data/victims_logs.db', output_file: str = 'analytics/index.html'):
@@ -45,16 +47,12 @@ class AnalyticsDashboard:
             cursor = conn.cursor()
             cursor.execute(query)
             for row in cursor.fetchall():
-                start_dt = datetime.strptime(
-                    f"{row[1]} {row[2]}:{row[3]}:{row[4]}", '%Y-%m-%d %H:%M:%S'
-                )
+                start_dt = compose_session_datetime(row[1], row[2], row[3], row[4])
                 in_progress = row[5] is None
                 if in_progress:
                     end_dt = now
                 else:
-                    end_dt = datetime.strptime(
-                        f"{row[5]} {row[6]}:{row[7]}:{row[8]}", '%Y-%m-%d %H:%M:%S'
-                    )
+                    end_dt = compose_session_datetime(row[5], row[6], row[7], row[8])
                 if row[9] not in (None, ''):
                     duration_seconds = int(float(row[9]))
                 else:
@@ -67,6 +65,7 @@ class AnalyticsDashboard:
                     'end_label': 'In progress' if in_progress else end_dt.strftime('%Y-%m-%d %H:%M:%S'),
                     'date': start_dt.strftime('%Y-%m-%d'),
                     'hour': start_dt.hour,
+                    'start_minutes': start_dt.hour * 60 + start_dt.minute,
                     'weekday_index': start_dt.weekday(),
                     'weekday_label': start_dt.strftime('%A'),
                     'duration_seconds': duration_seconds,
@@ -75,36 +74,14 @@ class AnalyticsDashboard:
         return sessions
 
     def _load_presence(self) -> List[Dict[str, Any]]:
-        """Loads presence observations (oldest → newest), joined with contacts."""
+        """Loads presence observations (oldest → newest), joined with contacts.
+
+        Delegates to :meth:`Database.get_presence_history` so the query and
+        row shape stay defined in exactly one place.
+        """
         if not self.db_path.exists():
             return []
-        query = '''
-            SELECT
-                u.user_name,
-                p.observed_at,
-                p.status_kind,
-                p.status_text,
-                p.last_seen
-            FROM Presence p
-            JOIN Users u ON p.user_id = u.id
-            ORDER BY p.observed_at ASC, p.id ASC
-        '''
-        rows: List[Dict[str, Any]] = []
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(query)
-                for row in cursor.fetchall():
-                    rows.append({
-                        'user_name': row[0],
-                        'observed_at': row[1],
-                        'status_kind': row[2],
-                        'status_text': row[3],
-                        'last_seen': row[4],
-                    })
-        except sqlite3.Error:
-            return []
-        return rows
+        return Database(str(self.db_path)).get_presence_history()
 
     @staticmethod
     def _regularity_score(sessions: List[Dict[str, Any]]) -> Optional[int]:
@@ -121,11 +98,7 @@ class AnalyticsDashboard:
             date = session['date']
             if date in first_times:
                 continue
-            try:
-                hour, minute = session['start_iso'][11:16].split(':')
-            except (ValueError, IndexError):
-                continue
-            first_times[date] = int(hour) * 60 + int(minute)
+            first_times[date] = session['start_minutes']
 
         if len(first_times) < 2:
             return None

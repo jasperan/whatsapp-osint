@@ -25,21 +25,14 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from .database import Database
 from .db_to_excel import Converter
 from .config import Config
-from .presence import PresenceParser
+from .presence import ONLINE_WORDS, PresenceParser
 
 logger = logging.getLogger(__name__)
 
-# Dictionary for different languages
-ONLINE_STATUS = {
-    'en': 'online',
-    'de': 'online',
-    'pt': 'online',
-    'es': 'en línea',
-    'fr': 'en ligne',
-    'it': 'in linea',
-    'cat': 'en línia',
-    'tr': 'çevrimiçi'
-}
+# NOTE: ONLINE_WORDS is defined once, in presence.py (the canonical parser), and
+# imported here so the tracker's online-detection XPath and the parser can never
+# drift apart.
+ONLINE_STATUS = ONLINE_WORDS
 
 # XPath candidates for detecting a successful WhatsApp Web login.
 # Tried in order; the first match wins. Update here when WhatsApp changes their DOM.
@@ -356,16 +349,22 @@ class WhatsAppBeacon:
         except WebDriverException:
             return ''
 
+    def _status_text_from(self, xpath: str) -> str:
+        """Reads the status text for one XPath, or '' when the node is gone."""
+        try:
+            element = self.driver.find_element(By.XPATH, xpath)
+        except (NoSuchElementException, WebDriverException):
+            return ''
+        return self._element_text_or_title(element)
+
     def _read_status_text(self) -> str:
         """Reads the current presence / status subtitle, if visible."""
         if self._last_status_xpath:
-            try:
-                element = self.driver.find_element(By.XPATH, self._last_status_xpath)
-                text = self._element_text_or_title(element)
-                if text:
-                    return text
-            except (NoSuchElementException, WebDriverException):
-                self._last_status_xpath = None
+            text = self._status_text_from(self._last_status_xpath)
+            if text:
+                return text
+            # Cached xpath went stale (element disappeared); re-probe below.
+            self._last_status_xpath = None
 
         # No cached xpath (or it went stale). Re-probe, but at most every 10s
         # so a DOM change cannot stall the 1-second polling loop.
@@ -378,11 +377,7 @@ class WhatsAppBeacon:
         if not found:
             return ''
         self._last_status_xpath = found
-        try:
-            element = self.driver.find_element(By.XPATH, found)
-            return self._element_text_or_title(element)
-        except (NoSuchElementException, WebDriverException):
-            return ''
+        return self._status_text_from(found)
 
     def _maybe_capture_presence(self, user_id: int) -> None:
         """Best-effort recording of the contact's presence text.
@@ -395,7 +390,9 @@ class WhatsAppBeacon:
             if not text:
                 return
             snapshot = PresenceParser(language=self.config.language).parse(text)
-        except Exception:  # noqa: BLE001 - presence capture is best-effort
+        except Exception as exc:  # noqa: BLE001 - DOM reads are best-effort
+            # Keep the loop alive, but leave evidence instead of swallowing silently.
+            logger.debug(f"Presence capture skipped: {exc}")
             return
 
         key = (snapshot.kind, snapshot.text)

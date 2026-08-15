@@ -26,7 +26,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 # Status kinds emitted by PresenceParser.
 ONLINE = 'online'
@@ -34,7 +34,8 @@ LAST_SEEN = 'last_seen'
 TYPING = 'typing'
 OTHER = 'other'
 
-# Mirrors beacon.ONLINE_STATUS so the parser never drifts from the tracker.
+# Canonical online-status word per language. beacon.py imports this dict so the
+# tracker's online-detection XPath and the parser can never drift apart.
 ONLINE_WORDS: Dict[str, str] = {
     'en': 'online',
     'de': 'online',
@@ -91,7 +92,6 @@ _TYPING_MARKERS = (
     'yazıyor',
     'yaziyor',
     'écrit',
-    'digitando…',
 )
 
 _TIME_RE = re.compile(r'(?<!\d)(\d{1,2}):(\d{2})(?!\d)')
@@ -106,6 +106,12 @@ _DATE_FORMATS = (
     '%d.%m.%Y',
     '%Y/%m/%d',
 )
+
+# Localized introducers for "last seen on <DATE> at …" per language.
+_ON_WORDS: Dict[str, Optional[str]] = {
+    'en': 'on', 'es': 'el', 'de': 'am', 'fr': 'le',
+    'it': 'il', 'pt': 'em', 'tr': None, 'cat': None,
+}
 
 
 @dataclass
@@ -132,9 +138,8 @@ class PresenceParser:
     """Parses one presence string into a :class:`PresenceSnapshot`.
 
     ``now`` is injectable so tests can pin the reference clock. The language
-    follows the tracker's ``ONLINE_STATUS`` keys (``en``, ``es``, ``de``,
-    ``fr``, ``it``, ``pt``, ``cat``, ``tr``); unknown languages fall back to
-    English wording.
+    follows :data:`ONLINE_WORDS` keys (``en``, ``es``, ``de``, ``fr``, ``it``,
+    ``pt``, ``cat``, ``tr``); unknown languages fall back to English wording.
     """
 
     def __init__(self, language: str = 'en', now: Optional[datetime] = None) -> None:
@@ -225,10 +230,7 @@ class PresenceParser:
         date parses, the day anchor (today/yesterday) or plain today is used.
         """
         # Find the "on"/localized date introducer, then the digits before the time.
-        on_word = {
-            'en': 'on', 'es': 'el', 'de': 'am', 'fr': 'le',
-            'it': 'il', 'pt': 'em', 'tr': None, 'cat': None,
-        }.get(self.language)
+        on_word = _ON_WORDS.get(self.language)
         if not on_word:
             return None
         pattern = re.compile(

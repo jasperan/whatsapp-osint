@@ -6,6 +6,17 @@ from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+# Columns of a presence observation as read by the shared presence queries.
+_PRESENCE_COLUMNS = ('user_name', 'observed_at', 'status_kind', 'status_text', 'last_seen')
+
+
+def compose_session_datetime(date: str, hour: str, minute: str, second: str) -> datetime:
+    """Composes the schema's separate date/hour/minute/second parts into a datetime."""
+    return datetime.strptime(
+        f"{date} {hour}:{minute}:{second}",
+        '%Y-%m-%d %H:%M:%S',
+    )
+
 
 class Database:
     def __init__(self, db_path: str = 'data/victims_logs.db') -> None:
@@ -127,16 +138,13 @@ class Database:
                 )
                 open_sessions = c.fetchall()
 
-                cutoff = datetime.strptime(
-                    f"{cutoff_parts['date']} {cutoff_parts['hour']}:{cutoff_parts['minute']}:{cutoff_parts['second']}",
-                    '%Y-%m-%d %H:%M:%S',
+                cutoff = compose_session_datetime(
+                    cutoff_parts['date'], cutoff_parts['hour'],
+                    cutoff_parts['minute'], cutoff_parts['second'],
                 )
                 closed = 0
                 for row in open_sessions:
-                    start = datetime.strptime(
-                        f"{row[1]} {row[2]}:{row[3]}:{row[4]}",
-                        '%Y-%m-%d %H:%M:%S',
-                    )
+                    start = compose_session_datetime(row[1], row[2], row[3], row[4])
                     seconds = max(int((cutoff - start).total_seconds()), 0)
                     c.execute(
                         'UPDATE Sessions SET end_date = ?, end_hour = ?, end_minute = ?, '
@@ -216,20 +224,33 @@ class Database:
                 c = conn.cursor()
                 c.execute(query, params)
                 for row in c.fetchall():
-                    rows.append({
-                        'user_name': row[0],
-                        'observed_at': row[1],
-                        'status_kind': row[2],
-                        'status_text': row[3],
-                        'last_seen': row[4],
-                    })
+                    rows.append(dict(zip(_PRESENCE_COLUMNS, row)))
         except sqlite3.Error as e:
             logger.error(f"Error reading presence history: {e}")
         return rows
 
     def get_latest_presence_by_user(self) -> Dict[str, Dict[str, str]]:
         """Returns the most recent presence observation per contact."""
+        query = '''
+            SELECT
+                u.user_name,
+                p.observed_at,
+                p.status_kind,
+                p.status_text,
+                p.last_seen
+            FROM Presence p
+            JOIN Users u ON p.user_id = u.id
+            WHERE p.id = (
+                SELECT MAX(p2.id) FROM Presence p2 WHERE p2.user_id = p.user_id
+            )
+        '''
         latest: Dict[str, Dict[str, str]] = {}
-        for row in self.get_presence_history():
-            latest[row['user_name']] = row
+        try:
+            with self._get_connection() as conn:
+                c = conn.cursor()
+                c.execute(query)
+                for row in c.fetchall():
+                    latest[row[0]] = dict(zip(_PRESENCE_COLUMNS, row))
+        except sqlite3.Error as e:
+            logger.error(f"Error reading latest presence: {e}")
         return latest
