@@ -7,7 +7,6 @@ temporary config that points at an isolated data directory.
 import json
 import sys
 
-import pytest
 
 from src.whatsapp_beacon.database import Database
 from src.whatsapp_beacon.main import main

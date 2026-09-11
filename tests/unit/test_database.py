@@ -1,5 +1,4 @@
 import pytest
-import sqlite3
 from src.whatsapp_beacon.database import Database
 
 @pytest.fixture
