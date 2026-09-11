@@ -1,4 +1,5 @@
 """Validation tests to ensure the testing infrastructure is properly set up."""
+import re
 import sys
 from pathlib import Path
 
@@ -107,3 +108,37 @@ def test_slow_marker():
     time.sleep(0.1)  # Simulate slow test
     duration = time.time() - start
     assert duration >= 0.1
+
+
+@pytest.mark.unit
+def test_dashboard_escapes_attacker_controlled_fields():
+    """Guard: every attacker-influenced field interpolated into the dashboard is HTML-escaped.
+
+    Contact names, status text and "last seen" strings are read from the monitored WhatsApp
+    account, so they are attacker-controlled. The dashboard renders them via ``innerHTML``
+    template literals, where an unescaped value is a stored-XSS sink. This test fails if a new
+    interpolation of one of those fields is added without ``escapeHtml(...)``.
+    """
+    template = (Path(__file__).parent.parent / 'src' / 'whatsapp_beacon' / 'dashboard.html').read_text(
+        encoding='utf-8'
+    )
+
+    assert 'const escapeHtml =' in template, 'escapeHtml helper is missing from the dashboard'
+
+    # Field names whose values originate from the monitored account / database text columns.
+    sensitive = {
+        'user_name', 'status_text', 'last_seen', 'observed_at',
+        'lastSeen', 'last_seen_label',
+    }
+
+    unescaped = []
+    for match in re.finditer(r'\$\{([^{}\n]*(?:\{[^{}\n]*\}[^{}\n]*)*)\}', template):
+        expr = match.group(1).strip()
+        referenced = {name for name in sensitive if re.search(rf'\b{name}\b', expr)}
+        if referenced and not expr.startswith('escapeHtml('):
+            unescaped.append((expr, sorted(referenced)))
+
+    assert not unescaped, (
+        'attacker-controlled values interpolated without escapeHtml(): '
+        + '; '.join(f'{expr!r} (uses {refs})' for expr, refs in unescaped)
+    )
