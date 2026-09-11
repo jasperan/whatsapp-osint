@@ -388,6 +388,16 @@
 
     const byId = (id) => document.getElementById(id);
 
+    // Contact names, presence text and parsed "last seen" strings come from WhatsApp and
+    // are therefore attacker-influenced: they must never be interpolated into HTML raw.
+    const escapeHtml = (value) =>
+      String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
     function formatDuration(totalSeconds) {
       if (!totalSeconds) return '0 sec';
       const hours = Math.floor(totalSeconds / 3600);
@@ -530,12 +540,12 @@
           <div class="leaderboard-item">
             <div class="leaderboard-rank">${index + 1}</div>
             <div>
-              <strong>${user.user_name}</strong>
+              <strong>${escapeHtml(user.user_name)}</strong>
               <span>${user.session_count} session${user.session_count === 1 ? '' : 's'} · avg ${formatDuration(user.average_seconds)} · ${regularity}</span>
             </div>
             <div class="leaderboard-stat">
               <strong>${formatDuration(user.total_seconds)}</strong>
-              <span>${lastSeen}</span>
+              <span>${escapeHtml(lastSeen)}</span>
             </div>
           </div>
         `;
@@ -594,7 +604,7 @@
           <tbody>
             ${rows.map((session) => `
               <tr>
-                <td>${session.user_name}</td>
+                <td>${escapeHtml(session.user_name)}</td>
                 <td class="muted">${session.start_label}</td>
                 <td class="muted">${session.end_label}</td>
                 <td>${formatDuration(session.duration_seconds)}</td>
@@ -625,10 +635,10 @@
           <tbody>
             ${rows.map((row) => `
               <tr>
-                <td>${row.user_name}</td>
-                <td class="muted">${row.observed_at}</td>
-                <td>${row.status_text}</td>
-                <td class="muted">${row.last_seen || '—'}</td>
+                <td>${escapeHtml(row.user_name)}</td>
+                <td class="muted">${escapeHtml(row.observed_at)}</td>
+                <td>${escapeHtml(row.status_text)}</td>
+                <td class="muted">${escapeHtml(row.last_seen || '—')}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -656,7 +666,7 @@
 
     function populateFilter() {
       const filter = byId('user-filter');
-      filter.innerHTML = ['<option value="all">All contacts</option>', ...dashboardData.users.map((user) => `<option value="${user.user_name}">${user.user_name}</option>`)].join('');
+      filter.innerHTML = ['<option value="all">All contacts</option>', ...dashboardData.users.map((user) => `<option value="${escapeHtml(user.user_name)}">${escapeHtml(user.user_name)}</option>`)].join('');
       filter.addEventListener('change', (event) => {
         state.user = event.target.value;
         const sessions = state.user === 'all'

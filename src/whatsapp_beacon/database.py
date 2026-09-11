@@ -23,6 +23,15 @@ class Database:
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.create_tables()
+        self._restrict_permissions()
+
+    def _restrict_permissions(self) -> None:
+        """Keep the tracking database owner-only; it holds private presence history."""
+        try:
+            self.db_path.chmod(0o600)
+        except OSError:
+            # Some mounted filesystems do not support chmod; not fatal for operation.
+            pass
 
     def _get_connection(self) -> sqlite3.Connection:
         """Retrieves a connection to the SQLite database."""
