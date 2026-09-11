@@ -264,7 +264,9 @@ class AnalyticsDashboard:
         return self.output_file
 
     def _render_html(self, payload: Dict[str, Any]) -> str:
-        data_json = json.dumps(payload, ensure_ascii=False)
+        # The payload is embedded inside a <script> block, so '<' is escaped to stop a
+        # contact-controlled name from closing the tag (e.g. '</script><script>').
+        data_json = json.dumps(payload, ensure_ascii=False).replace('<', '\\u003c')
         template = Path(__file__).with_name('dashboard.html').read_text(encoding='utf-8')
         return (
             template
