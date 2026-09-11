@@ -1,7 +1,6 @@
 """Unit tests for Excel + JSON exports (incl. the Presence worksheet)."""
 import json
 
-import pytest
 from openpyxl import load_workbook
 
 from src.whatsapp_beacon.database import Database

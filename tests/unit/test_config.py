@@ -1,4 +1,3 @@
-import pytest
 import yaml
 from argparse import Namespace
 from src.whatsapp_beacon.config import Config
