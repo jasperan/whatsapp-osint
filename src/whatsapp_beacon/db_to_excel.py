@@ -10,6 +10,21 @@ from .database import Database
 
 logger = logging.getLogger(__name__)
 
+# Excel (and LibreOffice) evaluate a leading '=' as a formula. Contact names and presence
+# text are attacker-influenced, so those cells are forced to text.
+_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _write_text(sheet, coordinate: str, value) -> None:
+    """Write a cell value, forcing text when it could be read as a spreadsheet formula."""
+    cell = sheet[coordinate]
+    cell.value = value
+    if isinstance(value, str) and value.startswith(_FORMULA_PREFIXES):
+        # openpyxl infers a formula from a leading '='; forcing the string type keeps the
+        # stored value identical while preventing evaluation when the file is opened.
+        cell.data_type = "s"
+
+
 class Converter:
     def __init__(self, db_path: str = 'data/victims_logs.db', excel_file: str = 'History_wp.xlsx'):
         self.db_path = Path(db_path)
@@ -81,18 +96,18 @@ class Converter:
                 presence_data = list(reversed(Database(str(self.db_path)).get_presence_history()))
 
             for row_idx, data in enumerate(all_data, start=2):
-                ws[f"A{row_idx}"] = data[0]
-                ws[f"B{row_idx}"] = data[1]
-                ws[f"C{row_idx}"] = data[2]
-                ws[f"D{row_idx}"] = data[3]
-                ws[f"E{row_idx}"] = data[4]
+                _write_text(ws, f"A{row_idx}", data[0])
+                _write_text(ws, f"B{row_idx}", data[1])
+                _write_text(ws, f"C{row_idx}", data[2])
+                _write_text(ws, f"D{row_idx}", data[3])
+                _write_text(ws, f"E{row_idx}", data[4])
 
             for row_idx, data in enumerate(presence_data, start=2):
-                ws2[f"A{row_idx}"] = data['user_name']
-                ws2[f"B{row_idx}"] = data['observed_at']
-                ws2[f"C{row_idx}"] = data['status_kind']
-                ws2[f"D{row_idx}"] = data['status_text']
-                ws2[f"E{row_idx}"] = data['last_seen']
+                _write_text(ws2, f"A{row_idx}", data['user_name'])
+                _write_text(ws2, f"B{row_idx}", data['observed_at'])
+                _write_text(ws2, f"C{row_idx}", data['status_kind'])
+                _write_text(ws2, f"D{row_idx}", data['status_text'])
+                _write_text(ws2, f"E{row_idx}", data['last_seen'])
 
             try:
                 self.excel_file.parent.mkdir(parents=True, exist_ok=True)
