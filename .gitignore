@@ -199,3 +199,21 @@ docs/*.md
 task_plan.md
 findings.md
 progress.md
+
+# Agent conversation / runtime state (never tracked)
+.omc/sessions/
+.omc/state/
+.omc/prd.json
+.omc/progress.txt
+.omc/project-memory.json
+.omc/notepad.md
+.omx/logs/
+.omx/state/
+.omx/metrics.json
+.omx/context/
+.omx/plans/
+.pi/goals/
+.pi/subagents/
+.claude/settings.local.json
+.claude/launch.json
+.codex
