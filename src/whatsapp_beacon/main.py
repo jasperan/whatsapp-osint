@@ -8,6 +8,19 @@ from .database import Database
 from .db_to_excel import export_json
 from .logger import setup_logging
 
+def _printable(value: object) -> str:
+    """Return *value* with terminal control characters removed.
+
+    Contact names and status text are written by other people on WhatsApp, so they can carry
+    ANSI escape sequences, an OSC 52 clipboard write or a screen clear. Printing them raw
+    hands the operator's terminal to whoever set the status. Tab and newline are kept; every
+    other C0/C1 control character (including DEL) is dropped. The dashboard, Excel and JSON
+    paths escape for their own syntax; this is the terminal's equivalent.
+    """
+    text = str(value)
+    return ''.join(ch for ch in text if ch in '\t\n' or not (ord(ch) < 32 or 0x7F <= ord(ch) <= 0x9F))
+
+
 def main():
     parser = argparse.ArgumentParser(description="WhatsApp OSINT Tracker")
     parser.add_argument('-u', '--username', help='Username to track')
@@ -57,7 +70,10 @@ def main():
             if filter_name and name != filter_name:
                 continue
             snapshot = latest[name]
-            print(f"{name}: {snapshot['status_text']} (observed {snapshot['observed_at']})")
+            print(
+                f"{_printable(name)}: {_printable(snapshot['status_text'])} "
+                f"(observed {snapshot['observed_at']})"
+            )
         sys.exit(0)
 
     if not config.username:
