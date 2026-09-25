@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/whatsapp-osint?style=for-the-badge&logo=pypi&logoColor=white)](https://pypi.org/project/whatsapp-osint/)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)
-![Python](https://img.shields.io/badge/python-3.8%2B-blue?style=for-the-badge)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey?style=for-the-badge)
 
 **WhatsApp Beacon** tracks when specific WhatsApp contacts go online and stores every completed session in SQLite. It can export to Excel, generate a polished analytics dashboard, and run fully headless once the session is authenticated.
