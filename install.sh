@@ -141,7 +141,7 @@ pick_python() {
             ver=$($cmd -c 'import sys; v=sys.version_info; print(f"{v.major}.{v.minor}")' 2>/dev/null) || continue
             major=${ver%%.*}
             minor=${ver##*.}
-            if [ "$major" -gt 3 ] || { [ "$major" -eq 3 ] && [ "$minor" -ge 8 ]; }; then
+            if [ "$major" -gt 3 ] || { [ "$major" -eq 3 ] && [ "$minor" -ge 10 ]; }; then
                 PYTHON="$cmd"
                 return 0
             fi
@@ -170,8 +170,8 @@ ensure_python() {
         return 0
     fi
 
-    is_linux || fail "Python 3.8+ is required — https://www.python.org/downloads/"
-    info "Python 3.8+ not found. Installing it..."
+    is_linux || fail "Python 3.10+ is required — https://www.python.org/downloads/"
+    info "Python 3.10+ not found. Installing it..."
     detect_package_manager || fail "Could not detect a supported package manager to install Python."
 
     case "$PKG_MANAGER" in
