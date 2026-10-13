@@ -97,6 +97,16 @@ python -m pip install -e ".[dev]"
 
 </details>
 
+### Install with OTinstaller (Linux)
+
+[OTinstaller](https://github.com/OSINTVerseHQ/OTinstaller) is a third-party tool manager that installs the PyPI release into its own virtualenv. It isn't maintained here, so please report problems with it [on the OTinstaller tracker](https://github.com/OSINTVerseHQ/OTinstaller/issues). Chrome or Chromium is still needed.
+
+```bash
+pipx install otinstaller
+otinstaller install whatsapp-osint
+otinstaller run whatsapp-osint -- -u "John Doe"   # same as whatsapp-beacon -u "John Doe"
+```
+
 ---
 
 ## ▶️ Run it
