@@ -103,6 +103,7 @@ python -m pip install -e ".[dev]"
 
 ```bash
 pipx install otinstaller
+otinstaller init
 otinstaller install whatsapp-osint
 otinstaller run whatsapp-osint -- -u "John Doe"   # same as whatsapp-beacon -u "John Doe"
 ```
