@@ -614,7 +614,9 @@
           `mean ${formatDuration(user.average_seconds)}`,
         ];
         if (user.regularity_score != null) parts.push(`regularity ${user.regularity_score}/100`);
-        const lastSeen = user.last_seen_label ? escapeHtml(user.last_seen_label) : '';
+        const seenLine = user.last_seen_label
+          ? `<span class="lb-seen">${escapeHtml(user.last_seen_label)}</span>`
+          : '';
         return `
           <div class="lb-row">
             <div class="lb-rank">${String(index + 1).padStart(2, '0')}</div>
@@ -624,7 +626,7 @@
             </div>
             <div>
               <div class="lb-total">${formatDuration(user.total_seconds)}</div>
-              ${lastSeen ? `<span class="lb-seen">${lastSeen}</span>` : ''}
+              ${seenLine}
             </div>
           </div>
         `;
