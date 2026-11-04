@@ -5,379 +5,438 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WhatsApp Beacon Analytics</title>
   <style>
+    /* A case file on a desk at night: cool graphite, ink, one highlighter. */
     :root {
-      --bg: #07111f;
-      --bg-elevated: rgba(13, 27, 43, 0.82);
-      --panel: rgba(12, 29, 47, 0.92);
-      --panel-strong: rgba(10, 23, 36, 0.98);
-      --line: rgba(119, 220, 255, 0.18);
-      --line-strong: rgba(119, 220, 255, 0.35);
-      --text: #f3f8ff;
-      --muted: #95a7c1;
-      --accent: #6cf1ff;
-      --accent-2: #8bffb5;
-      --accent-3: #ffd166;
-      --danger: #ff7a90;
-      --shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
-      --radius: 24px;
-      --radius-sm: 16px;
-      --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
-      --body: "Trebuchet MS", "Segoe UI", sans-serif;
+      --bg: #0b0d14;
+      --deep: #07080d;
+      --panel: #11141c;
+      --raised: #1a1e28;
+      --text: #eef0f5;
+      --text-2: #a3a9b8;
+      --text-3: #7a8296;
+      --line: rgba(238, 240, 245, 0.08);
+      --line-2: rgba(238, 240, 245, 0.16);
+      --accent: #e8b04b;
+      --accent-ink: #191203;
+      --mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+      --sans: "Inter", -apple-system, "Segoe UI", system-ui, sans-serif;
+      --radius: 16px;
+      --radius-sm: 8px;
     }
 
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
     body {
-      font-family: var(--body);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
       color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(108, 241, 255, 0.18), transparent 32%),
-        radial-gradient(circle at top right, rgba(139, 255, 181, 0.16), transparent 28%),
-        linear-gradient(180deg, #07111f 0%, #091827 52%, #050b14 100%);
-      background-attachment: fixed;
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
     }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-      background-size: 48px 48px;
-      mask-image: radial-gradient(circle at center, black 25%, transparent 92%);
-      opacity: 0.5;
-    }
+    ::selection { background: rgba(232, 176, 75, 0.28); }
 
     .shell {
-      width: min(1380px, calc(100vw - 32px));
+      width: min(1360px, calc(100vw - 40px));
       margin: 0 auto;
-      padding: 28px 0 48px;
+      padding: 32px 0 64px;
     }
 
-    .hero {
-      position: relative;
-      overflow: hidden;
-      padding: 32px;
-      border: 1px solid var(--line);
-      border-radius: calc(var(--radius) + 6px);
-      background: linear-gradient(140deg, rgba(8, 20, 34, 0.96), rgba(7, 17, 31, 0.84));
-      box-shadow: var(--shadow);
-      margin-bottom: 24px;
-    }
-
-    .hero::after {
-      content: "";
-      position: absolute;
-      inset: auto -80px -120px auto;
-      width: 260px;
-      height: 260px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(108, 241, 255, 0.28), transparent 70%);
-      filter: blur(6px);
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(108, 241, 255, 0.22);
-      background: rgba(108, 241, 255, 0.08);
-      color: var(--accent);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-    }
-
-    h1 {
-      margin: 18px 0 12px;
-      font-family: var(--display);
-      font-size: clamp(2.6rem, 5vw, 4.7rem);
-      line-height: 0.95;
-      letter-spacing: -0.04em;
-      max-width: 10ch;
-    }
-
-    .hero-copy {
-      display: grid;
-      grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
-      gap: 24px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.7;
-      font-size: 1.02rem;
-      max-width: 64ch;
-    }
-
-    .hero-meta {
-      align-self: end;
-      padding: 18px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--line);
-      background: rgba(10, 23, 36, 0.76);
-      backdrop-filter: blur(16px);
-    }
-
-    .hero-meta strong { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-2); margin-bottom: 8px; }
-    .hero-meta span { color: var(--text); }
-
-    .controls {
+    /* ---------- report header ---------- */
+    .report {
       display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
       justify-content: space-between;
-      gap: 18px;
-      padding: 18px 20px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--line);
-      background: var(--bg-elevated);
-      backdrop-filter: blur(14px);
-      margin-bottom: 24px;
+      gap: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 16px;
+    }
+    .kicker {
+      margin: 0 0 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-3);
+    }
+    h1 {
+      margin: 0;
+      font-family: var(--sans);
+      font-size: clamp(26px, 3.2vw, 38px);
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .period {
+      margin: 10px 0 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-2);
+      font-variant-numeric: tabular-nums;
+    }
+    .report-side {
+      display: flex;
+      align-items: flex-end;
+      gap: 20px;
       flex-wrap: wrap;
     }
-
-    label {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      color: var(--muted);
-      font-size: 0.82rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-3);
     }
-
     select {
-      min-width: 220px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 1px solid var(--line-strong);
-      background: rgba(5, 11, 20, 0.7);
+      min-width: 200px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line-2);
+      background: var(--raised);
       color: var(--text);
-      font: inherit;
+      font-family: var(--mono);
+      font-size: 12px;
       outline: none;
+      transition: border-color 140ms ease;
     }
-
-    .controls-copy {
-      max-width: 56ch;
-      color: var(--muted);
-      line-height: 1.6;
-      font-size: 0.96rem;
+    select:hover { border-color: rgba(238, 240, 245, 0.28); }
+    select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .stamp {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-3);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
+    .stamp span { color: var(--text-2); }
+    .scope-line {
+      margin: 0 0 24px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--text-3);
+    }
+    .scope-line.is-filtered { color: var(--accent); }
 
+    /* ---------- metrics ---------- */
     .metrics {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .metric-card, .panel {
-      border-radius: var(--radius);
+      gap: 1px;
+      background: var(--line);
       border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(13, 27, 43, 0.94), rgba(8, 18, 30, 0.96));
-      box-shadow: var(--shadow);
+      border-radius: var(--radius-sm);
       overflow: hidden;
-    }
-
-    .metric-card { padding: 20px; min-height: 148px; display: flex; flex-direction: column; justify-content: space-between; }
-    .metric-card .label { color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.75rem; }
-    .metric-card .value { font-family: var(--display); font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1; margin: 14px 0 10px; }
-    .metric-card .hint { color: var(--muted); font-size: 0.92rem; }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1.35fr 0.95fr;
-      gap: 20px;
       margin-bottom: 20px;
     }
+    .metric { background: var(--panel); padding: 14px 16px; }
+    .metric .label {
+      margin: 0 0 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-3);
+    }
+    .metric .value {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 500;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      font-variant-numeric: tabular-nums;
+    }
+    .metric .hint {
+      margin: 4px 0 0;
+      font-size: 11.5px;
+      line-height: 1.4;
+      color: var(--text-3);
+    }
 
-    .panel { padding: 24px; }
-    .panel h2 { margin: 0 0 8px; font-family: var(--display); font-size: 1.7rem; letter-spacing: -0.03em; }
-    .panel p.lead { margin: 0 0 18px; color: var(--muted); line-height: 1.6; }
-
-    .bars { display: flex; align-items: end; gap: 12px; min-height: 300px; }
-    .bar-column { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: end; gap: 10px; }
-    .bar-track {
-      position: relative;
-      height: 260px;
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.04);
+    /* ---------- panels ---------- */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .panel h2 {
+      margin: 0 0 4px;
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+    .panel .lead {
+      margin: 0 0 18px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--text-3);
+      max-width: 76ch;
+    }
+    .panel-head {
       display: flex;
-      align-items: end;
-      overflow: hidden;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
     }
-    .bar-fill {
-      width: 100%;
-      border-radius: 16px 16px 0 0;
-      background: linear-gradient(180deg, var(--accent), rgba(108, 241, 255, 0.28));
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+    .panel-note {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-3);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
-    .bar-meta { font-size: 0.85rem; color: var(--muted); }
-    .bar-meta strong { display: block; color: var(--text); font-size: 0.95rem; margin-bottom: 3px; }
-
-    .heatmap { display: grid; grid-template-columns: 120px repeat(24, minmax(0, 1fr)); gap: 8px; align-items: center; }
-    .heatmap-header, .heatmap-label { color: var(--muted); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.08em; }
-    .heatmap-cell {
-      aspect-ratio: 1 / 1;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.05);
-      background: rgba(255,255,255,0.03);
-      position: relative;
-    }
-    .heatmap-cell span {
-      position: absolute;
-      inset: auto 6px 6px auto;
-      font-size: 0.68rem;
-      color: rgba(255,255,255,0.7);
-    }
-
-    .leaderboard { display: grid; gap: 14px; }
-    .leaderboard-item {
+    .row-2 {
       display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 14px;
-      align-items: center;
-      padding: 16px 18px;
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,0.05);
-      background: rgba(255,255,255,0.03);
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 20px;
     }
-    .leaderboard-rank {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
+
+    /* ---------- heatmap ---------- */
+    .heatmap {
+      display: grid;
+      grid-template-columns: 48px repeat(24, minmax(0, 1fr));
+      gap: 4px;
+      align-items: center;
+    }
+    .hm-hour {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-3);
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .hm-day {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-2);
+    }
+    .hm-cell {
+      aspect-ratio: 1 / 1;
+      border-radius: 4px;
+      background: rgba(238, 240, 245, 0.04);
       display: grid;
       place-items: center;
-      font-weight: 700;
-      color: var(--bg);
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-3);
+      font-variant-numeric: tabular-nums;
     }
-    .leaderboard-item strong { display: block; font-size: 1rem; margin-bottom: 4px; }
-    .leaderboard-item span { color: var(--muted); font-size: 0.9rem; }
-    .leaderboard-stat { text-align: right; }
-    .leaderboard-stat strong { display: block; font-size: 1.15rem; }
-    .leaderboard-stat span { color: var(--muted); font-size: 0.85rem; }
+    .heatmap.is-empty, .bars.is-empty { display: block; }
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 16px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-3);
+      font-variant-numeric: tabular-nums;
+    }
+    .legend i { display: block; width: 14px; height: 14px; border-radius: 3px; }
+    .legend .legend-gap { margin-left: 12px; }
 
+    /* ---------- daily bars ---------- */
+    .bars {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+      gap: 8px;
+      align-items: end;
+    }
+    .bar-col { display: flex; flex-direction: column; justify-content: end; gap: 6px; min-width: 0; }
+    .bar-track { display: flex; align-items: end; height: 120px; border-bottom: 1px solid var(--line); }
+    .bar-fill {
+      width: 100%;
+      border-radius: 4px 4px 0 0;
+      background: rgba(238, 240, 245, 0.22);
+      transition: background 140ms ease;
+    }
+    .bar-col:hover .bar-fill { background: rgba(238, 240, 245, 0.45); }
+    .bar-meta {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--text-3);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---------- leaderboard ---------- */
+    .leaderboard { display: grid; }
+    .lb-row {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .lb-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .lb-rank {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-3);
+      font-variant-numeric: tabular-nums;
+    }
+    .lb-name { font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-meta {
+      display: block;
+      margin-top: 2px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-3);
+      font-variant-numeric: tabular-nums;
+    }
+    .lb-total {
+      font-family: var(--mono);
+      font-size: 13px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .lb-seen {
+      display: block;
+      margin-top: 2px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--text-3);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    /* ---------- duration buckets ---------- */
     .bucket-list { display: grid; gap: 12px; }
-    .bucket-row { display: grid; grid-template-columns: 130px 1fr auto; gap: 12px; align-items: center; }
-    .bucket-label { color: var(--muted); font-size: 0.9rem; }
-    .bucket-track { height: 14px; border-radius: 999px; background: rgba(255,255,255,0.05); overflow: hidden; }
-    .bucket-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent-3), rgba(255, 209, 102, 0.24)); }
-    .bucket-value { color: var(--text); font-size: 0.9rem; font-weight: 700; }
+    .bucket-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) 32px; gap: 12px; align-items: center; }
+    .bucket-label { font-family: var(--mono); font-size: 11px; color: var(--text-3); }
+    .bucket-track { height: 8px; border-radius: 4px; background: rgba(238, 240, 245, 0.06); overflow: hidden; }
+    .bucket-fill { height: 100%; border-radius: 4px; background: var(--text-3); }
+    .bucket-value {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-2);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
 
+    /* ---------- tables ---------- */
     table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
-    th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.12em; }
-    td { color: var(--text); font-size: 0.94rem; }
-    td.muted { color: var(--muted); }
+    th, td { padding: 9px 8px; text-align: left; border-bottom: 1px solid var(--line); }
+    th {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--text-3);
+      white-space: nowrap;
+    }
+    td { font-size: 12.5px; color: var(--text); }
+    td.muted { color: var(--text-2); }
+    td.time { font-family: var(--mono); font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    td.date { font-family: var(--mono); font-size: 11.5px; color: var(--text-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    tbody tr:last-child td { border-bottom: 0; }
 
-    .empty-state {
-      margin: 20px 0 0;
-      padding: 22px;
-      border-radius: 18px;
-      border: 1px dashed rgba(255,255,255,0.1);
-      color: var(--muted);
-      background: rgba(255,255,255,0.02);
-      line-height: 1.7;
+    .empty {
+      margin: 0;
+      padding: 12px 0 4px;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--text-3);
+      max-width: 70ch;
     }
 
     @media (max-width: 1100px) {
-      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .grid { grid-template-columns: 1fr; }
-      .hero-copy { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .row-2 { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 760px) {
-      .shell { width: min(100vw - 20px, 100%); }
-      .hero, .panel { padding: 20px; }
-      .metrics { grid-template-columns: 1fr; }
-      .bars { gap: 8px; overflow-x: auto; padding-bottom: 8px; }
-      .bar-column { min-width: 84px; }
-      .heatmap { grid-template-columns: 88px repeat(24, 22px); overflow-x: auto; padding-bottom: 8px; }
-      .bucket-row { grid-template-columns: 1fr; }
+      .shell { width: calc(100vw - 24px); padding: 20px 0 40px; }
+      .panel { padding: 16px; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .heatmap { grid-template-columns: 40px repeat(24, 20px); overflow-x: auto; padding-bottom: 6px; }
+      .bars { grid-auto-columns: 56px; overflow-x: auto; padding-bottom: 6px; }
+      .bucket-row { grid-template-columns: 76px minmax(0, 1fr) 28px; }
+      th, td { padding: 8px 6px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
     }
   </style>
 </head>
 <body>
   <main class="shell">
-    <section class="hero">
-      <span class="eyebrow">OSINT Analytics</span>
-      <div class="hero-copy">
-        <div>
-          <h1>WhatsApp Beacon Analytics</h1>
-          <p>
-            A forensic-style dashboard for online session history. Filter by contact, scan burst windows,
-            spot daily patterns, and review the exact session cadence without leaving a single static file.
-          </p>
-        </div>
-        <div class="hero-meta">
-          <strong>Generated</strong>
-          <span id="generated-at">__GENERATED_AT__</span>
-        </div>
+    <header class="report">
+      <div>
+        <p class="kicker">Presence report</p>
+        <h1>WhatsApp presence</h1>
+        <p class="period" id="period">__GENERATED_AT__</p>
       </div>
-    </section>
+      <div class="report-side">
+        <div class="field">
+          <label for="user-filter">Contact</label>
+          <select id="user-filter"></select>
+        </div>
+        <p class="stamp">generated <span id="generated-at">__GENERATED_AT__</span></p>
+      </div>
+    </header>
 
-    <section class="controls">
-      <label>
-        Contact filter
-        <select id="user-filter"></select>
-      </label>
-      <div class="controls-copy" id="controls-copy">
-        Use the filter to isolate one contact or keep the whole dataset in view. The charts below recompute instantly.
-      </div>
-    </section>
+    <p class="scope-line" id="controls-copy"></p>
 
     <section class="metrics" id="metrics"></section>
 
-    <section class="grid">
-      <article class="panel">
-        <h2>Daily activity arc</h2>
-        <p class="lead">Total online time by day. This makes streaks, dead zones, and high-intensity bursts obvious fast.</p>
-        <div class="bars" id="daily-bars"></div>
-      </article>
-      <article class="panel">
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Weekly heatmap</h2>
+          <p class="lead">Session starts per weekday and hour. The 24-hour axis is the same tick used in every timestamp below.</p>
+        </div>
+        <span class="panel-note" id="heatmap-note"></span>
+      </div>
+      <div class="heatmap" id="heatmap"></div>
+      <div class="legend" id="heatmap-legend"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Daily activity</h2>
+          <p class="lead">Total online time per day, from the first session start to the last.</p>
+        </div>
+        <span class="panel-note" id="bars-note">last 14 tracked days</span>
+      </div>
+      <div class="bars" id="daily-bars"></div>
+    </section>
+
+    <div class="row-2">
+      <section class="panel">
         <h2>Contact leaderboard</h2>
-        <p class="lead">Who dominates the dataset, who shows up rarely, and who racks up the longest sessions.</p>
+        <p class="lead">Contacts ranked by total online time, with session count, mean duration and how regular their first daily start is.</p>
         <div class="leaderboard" id="leaderboard"></div>
-      </article>
-    </section>
-
-    <section class="grid">
-      <article class="panel">
-        <h2>Weekly heatmap</h2>
-        <p class="lead">Session starts mapped across weekdays and hours. Dense cells flag reliable behavior windows.</p>
-        <div class="heatmap" id="heatmap"></div>
-      </article>
-      <article class="panel">
+      </section>
+      <section class="panel">
         <h2>Session duration mix</h2>
-        <p class="lead">Short pings and long hangs side by side, bucketed for quick pattern recognition.</p>
+        <p class="lead">Sessions counted by length bucket.</p>
         <div class="bucket-list" id="duration-buckets"></div>
-      </article>
-    </section>
+      </section>
+    </div>
 
-    <section class="grid">
-      <article class="panel">
+    <div class="row-2">
+      <section class="panel">
         <h2>Recent sessions</h2>
-        <p class="lead">The latest completed sessions, with full timestamps and durations.</p>
+        <p class="lead">The latest closed sessions in this view.</p>
         <div id="recent-sessions"></div>
-      </article>
-      <article class="panel">
+      </section>
+      <section class="panel">
         <h2>Longest sessions</h2>
-        <p class="lead">Top sessions by duration. Useful when you want the outliers instead of the averages.</p>
+        <p class="lead">The ten longest sessions in this view.</p>
         <div id="top-sessions"></div>
-      </article>
-    </section>
+      </section>
+    </div>
 
-    <section class="panel" style="margin-bottom: 20px;">
+    <section class="panel">
       <h2>Presence trail</h2>
-      <p class="lead">Raw presence signals captured by the tracker: every observed "online", "last seen …" and "typing…" status. This is the evidence between sessions — it shows when a contact was active even when no session was recorded.</p>
+      <p class="lead">Every observed status — online, last seen, typing — stored between sessions. This is the evidence for activity that no closed session records.</p>
       <div id="presence-trail"></div>
     </section>
   </main>
@@ -398,20 +457,31 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
 
+    // One duration format everywhere: HH:MM:SS, tabular.
     function formatDuration(totalSeconds) {
-      if (!totalSeconds) return '0 sec';
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      const parts = [];
-      if (hours) parts.push(`${hours}h`);
-      if (minutes) parts.push(`${minutes}m`);
-      if (seconds || parts.length === 0) parts.push(`${seconds}s`);
-      return parts.join(' ');
+      const safe = Math.max(0, Math.round(totalSeconds || 0));
+      const hours = Math.floor(safe / 3600);
+      const minutes = Math.floor((safe % 3600) / 60);
+      const seconds = safe % 60;
+      const pad = (value) => String(value).padStart(2, '0');
+      return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
     }
 
     function formatHour(hour) {
       return `${String(hour).padStart(2, '0')}:00`;
+    }
+
+    // 'YYYY-MM-DD HH:MM:SS' → date part and 24h time part.
+    function splitStamp(label) {
+      const [date, time] = String(label ?? '').split(' ');
+      return { date: date || '—', time: time || '' };
+    }
+
+    // Any stored stamp rendered as one cell: date, then the 24h time tick.
+    function formatStamp(label) {
+      if (!label) return '—';
+      const { date, time } = splitStamp(label);
+      return time ? `${date} ${time.slice(0, 5)}` : date;
     }
 
     function buildView(sessions) {
@@ -488,40 +558,45 @@
 
     function renderMetrics(summary) {
       const metrics = [
-        ['Sessions logged', summary.total_sessions, summary.total_sessions ? 'Completed, closed sessions only' : 'No finished sessions yet'],
-        ['Contacts tracked', summary.total_contacts, summary.total_contacts ? 'Unique contacts in this filtered view' : 'Run the tracker to collect contacts'],
-        ['Total online time', formatDuration(summary.total_seconds), 'Accumulated across the current filter'],
+        ['Sessions logged', summary.total_sessions ? String(summary.total_sessions) : '0', summary.total_sessions ? 'Closed sessions only' : 'No finished sessions yet'],
+        ['Contacts tracked', summary.total_contacts ? String(summary.total_contacts) : '0', summary.total_contacts ? 'Unique contacts in this view' : 'Run the tracker to collect contacts'],
+        ['Total online time', formatDuration(summary.total_seconds), 'Across the current filter'],
         ['Average session', formatDuration(summary.average_seconds), 'Mean duration per session'],
-        ['Busiest hour', `${formatHour(summary.busiest_hour)}`, summary.busiest_hour_count ? `${summary.busiest_hour_count} session starts` : 'No repeated activity yet'],
+        ['Busiest hour', formatHour(summary.busiest_hour), summary.busiest_hour_count ? `${summary.busiest_hour_count} session starts` : 'No repeated activity yet'],
       ];
 
       byId('metrics').innerHTML = metrics.map(([label, value, hint]) => `
-        <article class="metric-card">
-          <div class="label">${label}</div>
+        <article class="metric">
+          <p class="label">${label}</p>
           <div class="value">${value}</div>
-          <div class="hint">${hint}</div>
+          <p class="hint">${hint}</p>
         </article>
       `).join('');
     }
 
     function renderDailyBars(dailyActivity) {
       if (!dailyActivity.length) {
-        byId('daily-bars').innerHTML = '<div class="empty-state">No closed sessions yet. Keep the tracker running, then regenerate analytics.</div>';
+        byId('daily-bars').classList.add('is-empty');
+        byId('daily-bars').innerHTML = '<p class="empty">No closed sessions yet. Keep the tracker running, then regenerate analytics.</p>';
+        byId('bars-note').textContent = '';
         return;
       }
 
-      const maxSeconds = Math.max(...dailyActivity.map((entry) => entry.total_seconds), 1);
-      byId('daily-bars').innerHTML = dailyActivity.map((entry) => {
-        const height = Math.max(14, Math.round((entry.total_seconds / maxSeconds) * 100));
+      byId('daily-bars').classList.remove('is-empty');
+
+      // Fourteen columns is what the panel can carry before the meta line collides.
+      const window = dailyActivity.slice(-14);
+      const maxSeconds = Math.max(...window.map((entry) => entry.total_seconds), 1);
+      byId('bars-note').textContent = `last ${window.length} days · peak ${formatDuration(maxSeconds)}`;
+      byId('daily-bars').innerHTML = window.map((entry) => {
+        const height = Math.max(2, Math.round((entry.total_seconds / maxSeconds) * 100));
+        const tooltip = `${entry.date} · ${formatDuration(entry.total_seconds)} · ${entry.session_count} session${entry.session_count === 1 ? '' : 's'}`;
         return `
-          <div class="bar-column">
+          <div class="bar-col" title="${tooltip}">
             <div class="bar-track">
               <div class="bar-fill" style="height: ${height}%;"></div>
             </div>
-            <div class="bar-meta">
-              <strong>${entry.label}</strong>
-              ${formatDuration(entry.total_seconds)} · ${entry.session_count} session${entry.session_count === 1 ? '' : 's'}
-            </div>
+            <div class="bar-meta">${entry.label}</div>
           </div>
         `;
       }).join('');
@@ -529,23 +604,29 @@
 
     function renderLeaderboard(users) {
       if (!users.length) {
-        byId('leaderboard').innerHTML = '<div class="empty-state">No contact activity yet. Once sessions land in the database, the ranking shows who dominates the dataset.</div>';
+        byId('leaderboard').innerHTML = '<p class="empty">No contact activity yet. Once sessions land in the database, the ranking shows who holds the most time.</p>';
         return;
       }
 
       byId('leaderboard').innerHTML = users.slice(0, 6).map((user, index) => {
-        const regularity = user.regularity_score == null ? 'regularity —' : `regularity ${user.regularity_score}/100`;
-        const lastSeen = user.last_seen_label || 'last seen —';
+        const parts = [
+          `${user.session_count} session${user.session_count === 1 ? '' : 's'}`,
+          `mean ${formatDuration(user.average_seconds)}`,
+        ];
+        if (user.regularity_score != null) parts.push(`regularity ${user.regularity_score}/100`);
+        const seenLine = user.last_seen_label
+          ? `<span class="lb-seen">${escapeHtml(user.last_seen_label)}</span>`
+          : '';
         return `
-          <div class="leaderboard-item">
-            <div class="leaderboard-rank">${index + 1}</div>
+          <div class="lb-row">
+            <div class="lb-rank">${String(index + 1).padStart(2, '0')}</div>
             <div>
-              <strong>${escapeHtml(user.user_name)}</strong>
-              <span>${user.session_count} session${user.session_count === 1 ? '' : 's'} · avg ${formatDuration(user.average_seconds)} · ${regularity}</span>
+              <div class="lb-name">${escapeHtml(user.user_name)}</div>
+              <span class="lb-meta">${parts.join(' · ')}</span>
             </div>
-            <div class="leaderboard-stat">
-              <strong>${formatDuration(user.total_seconds)}</strong>
-              <span>${escapeHtml(lastSeen)}</span>
+            <div>
+              <div class="lb-total">${formatDuration(user.total_seconds)}</div>
+              ${seenLine}
             </div>
           </div>
         `;
@@ -553,24 +634,44 @@
     }
 
     function renderHeatmap(rows) {
-      if (!rows.some((row) => row.hours.some((value) => value > 0))) {
-        byId('heatmap').innerHTML = '<div class="empty-state">The heatmap comes alive after a few days of tracking. Right now there is not enough finished activity to paint a pattern.</div>';
+      const maxValue = Math.max(...rows.flatMap((row) => row.hours), 1);
+      const hasActivity = rows.some((row) => row.hours.some((value) => value > 0));
+
+      if (!hasActivity) {
+        byId('heatmap').classList.add('is-empty');
+        byId('heatmap').innerHTML = '<p class="empty">The heatmap fills in after a few days of tracking. There is not enough finished activity to paint a pattern yet.</p>';
+        byId('heatmap-legend').innerHTML = '';
+        byId('heatmap-note').textContent = '';
         return;
       }
 
-      const maxValue = Math.max(...rows.flatMap((row) => row.hours), 1);
-      const header = ['<div></div>', ...Array.from({ length: 24 }, (_, hour) => `<div class="heatmap-header">${String(hour).padStart(2, '0')}</div>`)].join('');
+      byId('heatmap').classList.remove('is-empty');
+
+      // Five discrete steps of one ink, never a gradient.
+      const steps = [0.06, 0.2, 0.36, 0.54, 0.74];
+      const stepFor = (value) => (value === 0 ? -1 : Math.min(steps.length - 1, Math.ceil((value / maxValue) * steps.length) - 1));
+
+      const header = ['<div></div>', ...Array.from({ length: 24 }, (_, hour) => `<div class="hm-hour">${String(hour).padStart(2, '0')}</div>`)].join('');
       const body = rows.map((row) => `
-        <div class="heatmap-label">${row.day}</div>
+        <div class="hm-day">${escapeHtml(String(row.day).slice(0, 3))}</div>
         ${row.hours.map((value) => {
-          const strength = value ? value / maxValue : 0;
-          const background = value
-            ? `linear-gradient(180deg, rgba(108, 241, 255, ${0.18 + strength * 0.62}), rgba(139, 255, 181, ${0.12 + strength * 0.4}))`
-            : 'rgba(255,255,255,0.03)';
-          return `<div class="heatmap-cell" style="background:${background}; box-shadow:${value ? `0 0 0 1px rgba(108,241,255,${0.12 + strength * 0.2}), inset 0 1px 0 rgba(255,255,255,0.12)` : 'none'}"><span>${value || ''}</span></div>`;
+          const step = stepFor(value);
+          const alpha = step < 0 ? 0 : steps[step];
+          const ink = step < 0 ? 'var(--text-3)' : alpha > 0.4 ? 'var(--accent-ink)' : 'var(--text-2)';
+          return `<div class="hm-cell" style="background: rgba(238,240,245,${alpha}); color: ${ink};" title="${value} session start${value === 1 ? '' : 's'}">${value || ''}</div>`;
         }).join('')}
       `).join('');
       byId('heatmap').innerHTML = header + body;
+
+      const busiest = rows.flatMap((row) => row.hours).reduce((max, value) => Math.max(max, value), 0);
+      byId('heatmap-note').textContent = `peak ${busiest} starts in one hour`;
+      byId('heatmap-legend').innerHTML = [
+        '<i style="background: rgba(238,240,245,0.04)"></i>',
+        '<span>0</span>',
+        ...steps.map((alpha) => `<i style="background: rgba(238,240,245,${alpha})"></i>`),
+        `<span>${maxValue}</span>`,
+        '<span class="legend-gap">session starts per hour</span>',
+      ].join('');
     }
 
     function renderBuckets(buckets) {
@@ -578,7 +679,7 @@
       byId('duration-buckets').innerHTML = buckets.map((bucket) => `
         <div class="bucket-row">
           <div class="bucket-label">${bucket.label}</div>
-          <div class="bucket-track"><div class="bucket-fill" style="width: ${Math.max((bucket.count / maxCount) * 100, bucket.count ? 10 : 0)}%;"></div></div>
+          <div class="bucket-track"><div class="bucket-fill" style="width: ${Math.max((bucket.count / maxCount) * 100, bucket.count ? 6 : 0)}%;"></div></div>
           <div class="bucket-value">${bucket.count}</div>
         </div>
       `).join('');
@@ -587,7 +688,7 @@
     function renderTable(containerId, rows) {
       const container = byId(containerId);
       if (!rows.length) {
-        container.innerHTML = '<div class="empty-state">Nothing to show yet for this view.</div>';
+        container.innerHTML = '<p class="empty">Nothing to show yet for this view.</p>';
         return;
       }
 
@@ -596,20 +697,26 @@
           <thead>
             <tr>
               <th>Contact</th>
-              <th>Started</th>
-              <th>Ended</th>
+              <th>Date</th>
+              <th>Start</th>
+              <th>End</th>
               <th>Duration</th>
             </tr>
           </thead>
           <tbody>
-            ${rows.map((session) => `
+            ${rows.map((session) => {
+              const start = splitStamp(session.start_label);
+              const end = splitStamp(session.end_label);
+              return `
               <tr>
                 <td>${escapeHtml(session.user_name)}</td>
-                <td class="muted">${session.start_label}</td>
-                <td class="muted">${session.end_label}</td>
-                <td>${formatDuration(session.duration_seconds)}</td>
+                <td class="date">${start.date}</td>
+                <td class="time">${start.time}</td>
+                <td class="time">${end.time || escapeHtml(session.end_label)}</td>
+                <td class="time">${formatDuration(session.duration_seconds)}</td>
               </tr>
-            `).join('')}
+            `;
+            }).join('')}
           </tbody>
         </table>
       `;
@@ -618,7 +725,7 @@
     function renderPresenceTrail(rows) {
       const container = byId('presence-trail');
       if (!rows.length) {
-        container.innerHTML = '<div class="empty-state">No presence signals recorded yet. They start accumulating the next time the tracker runs — status text like "last seen today at 14:32" is stored between sessions.</div>';
+        container.innerHTML = '<p class="empty">No presence signals recorded yet. They accumulate the next time the tracker runs — status text like "last seen today at 14:32" is stored between sessions.</p>';
         return;
       }
 
@@ -627,30 +734,47 @@
           <thead>
             <tr>
               <th>Contact</th>
-              <th>Observed</th>
+              <th>Date</th>
+              <th>Time</th>
               <th>Status</th>
-              <th>Last seen (parsed)</th>
+              <th>Last seen, parsed</th>
             </tr>
           </thead>
           <tbody>
-            ${rows.map((row) => `
+            ${rows.map((row) => {
+              const observed = splitStamp(row.observed_at);
+              return `
               <tr>
                 <td>${escapeHtml(row.user_name)}</td>
-                <td class="muted">${escapeHtml(row.observed_at)}</td>
-                <td>${escapeHtml(row.status_text)}</td>
-                <td class="muted">${escapeHtml(row.last_seen || '—')}</td>
+                <td class="date">${escapeHtml(observed.date)}</td>
+                <td class="time">${escapeHtml(observed.time)}</td>
+                <td>${escapeHtml(row.status_text || '—')}</td>
+                <td class="time">${escapeHtml(formatStamp(row.last_seen))}</td>
               </tr>
-            `).join('')}
+            `;
+            }).join('')}
           </tbody>
         </table>
       `;
     }
 
+    function renderPeriod(view) {
+      const days = view.daily_activity;
+      const first = days.length ? days[0].date : null;
+      const last = days.length ? days[days.length - 1].date : null;
+      const contacts = view.summary.total_contacts;
+      const sessions = view.summary.total_sessions;
+      byId('period').textContent = first
+        ? `${first} → ${last} · ${contacts} contact${contacts === 1 ? '' : 's'} · ${sessions} session${sessions === 1 ? '' : 's'}`
+        : 'No dated sessions in this view';
+    }
+
     function render(view) {
       renderMetrics(view.summary);
+      renderPeriod(view);
+      renderHeatmap(view.hourly_heatmap);
       renderDailyBars(view.daily_activity);
       renderLeaderboard(view.users);
-      renderHeatmap(view.hourly_heatmap);
       renderBuckets(view.duration_buckets);
       renderTable('recent-sessions', view.recent_sessions);
       renderTable('top-sessions', view.top_sessions);
@@ -660,8 +784,14 @@
         : dashboardData.presence_trail.filter((row) => row.user_name === state.user);
       renderPresenceTrail(presenceRows);
 
-      const scopeLabel = state.user === 'all' ? 'the full dataset' : `only ${state.user}`;
-      byId('controls-copy').textContent = `You are viewing ${scopeLabel}. The cards and charts below are recalculated live inside this static report.`;
+      const scope = byId('controls-copy');
+      if (state.user === 'all') {
+        scope.textContent = 'Showing all contacts in the dataset';
+        scope.classList.remove('is-filtered');
+      } else {
+        scope.textContent = `Filtered to ${state.user} — every figure and table below recomputed`;
+        scope.classList.add('is-filtered');
+      }
     }
 
     function populateFilter() {
