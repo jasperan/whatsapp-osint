@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from .database import Database, compose_session_datetime
+from .private_files import create_private_file, make_private_dir
 
 
 class AnalyticsDashboard:
@@ -259,7 +260,8 @@ class AnalyticsDashboard:
 
     def export(self) -> Path:
         payload = self.build_payload()
-        self.output_file.parent.mkdir(parents=True, exist_ok=True)
+        make_private_dir(self.output_file.parent)
+        create_private_file(self.output_file)
         self.output_file.write_text(self._render_html(payload), encoding='utf-8')
         return self.output_file
 

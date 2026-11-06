@@ -3,12 +3,14 @@ import colorlog
 import sys
 from pathlib import Path
 
+from .private_files import create_private_file, make_private_dir
+
 def setup_logging(log_level="INFO", log_dir="logs"):
     """Sets up the logging configuration."""
 
     # Create logs directory if it doesn't exist
     log_path = Path(log_dir)
-    log_path.mkdir(parents=True, exist_ok=True)
+    make_private_dir(log_path)
 
     log_file = log_path / "whatsapp_beacon.log"
 
@@ -36,6 +38,7 @@ def setup_logging(log_level="INFO", log_dir="logs"):
     root_logger.addHandler(console_handler)
 
     # File Handler
+    create_private_file(log_file)
     file_handler = logging.FileHandler(log_file)
     file_formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s",

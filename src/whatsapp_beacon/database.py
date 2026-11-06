@@ -4,6 +4,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from .private_files import make_private_dir
+
 logger = logging.getLogger(__name__)
 
 # Columns of a presence observation as read by the shared presence queries.
@@ -21,7 +23,7 @@ def compose_session_datetime(date: str, hour: str, minute: str, second: str) -> 
 class Database:
     def __init__(self, db_path: str = 'data/victims_logs.db') -> None:
         self.db_path = Path(db_path)
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        make_private_dir(self.db_path.parent)
         self.create_tables()
         self._restrict_permissions()
 

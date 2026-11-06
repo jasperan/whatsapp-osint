@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .database import Database
+from .private_files import create_private_file, make_private_dir
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +111,8 @@ class Converter:
                 _write_text(ws2, f"E{row_idx}", data['last_seen'])
 
             try:
-                self.excel_file.parent.mkdir(parents=True, exist_ok=True)
+                make_private_dir(self.excel_file.parent)
+                create_private_file(self.excel_file)
                 wb.save(self.excel_file)
                 logger.info(f"All data added to your Excel file: {self.excel_file}")
             except PermissionError:
@@ -159,7 +161,8 @@ def export_json(db_path: str = 'data/victims_logs.db', output_path: str = 'analy
         # and row shape stay defined in exactly one place.
         payload['presence'] = Database(db_path=str(db)).get_presence_history()
 
-    out.parent.mkdir(parents=True, exist_ok=True)
+    make_private_dir(out.parent)
+    create_private_file(out)
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
     logger.info(f"JSON export written to {out}")
     return out
