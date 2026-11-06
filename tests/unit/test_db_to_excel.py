@@ -153,3 +153,17 @@ def test_formula_like_contact_name_is_never_written_as_a_live_formula(tmp_path):
             cell = presence[f'{col}{row}']
             if isinstance(cell.value, str):
                 assert cell.data_type == 's', f'{col}{row} stored as {cell.data_type!r}'
+
+
+def test_db_to_excel_strips_xml_illegal_control_characters(tmp_path):
+    db_path = tmp_path / 'export.db'
+    db = _seed_db(db_path, tmp_path)
+    bob = db.get_or_create_user('Bob')
+    db.insert_presence(bob, '2026-08-02 09:05:00', 'online', 'online\x07\x1b', None)
+    excel_path = tmp_path / 'out' / 'History_wp.xlsx'
+
+    Converter(db_path=str(db_path), excel_file=str(excel_path)).db_to_excel()
+
+    wb = load_workbook(excel_path)
+    texts = [row[3].value for row in wb['Presence'].iter_rows(min_row=2)]
+    assert 'online' in texts
