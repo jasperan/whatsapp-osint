@@ -1,4 +1,5 @@
 from openpyxl import Workbook
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.styles import Font, Alignment
 import sqlite3
 import logging
@@ -19,6 +20,10 @@ _FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 def _write_text(sheet, coordinate: str, value) -> None:
     """Write a cell value, forcing text when it could be read as a spreadsheet formula."""
     cell = sheet[coordinate]
+    if isinstance(value, str):
+        # Control characters that XML cannot carry make openpyxl raise on assignment; one such
+        # character in a stored status text would otherwise block every later export.
+        value = ILLEGAL_CHARACTERS_RE.sub("", value)
     cell.value = value
     if isinstance(value, str) and value.startswith(_FORMULA_PREFIXES):
         # openpyxl infers a formula from a leading '='; forcing the string type keeps the
