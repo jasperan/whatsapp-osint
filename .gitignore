@@ -174,6 +174,12 @@ Thumbs.db
 test_*.db
 *.db-journal
 
+# Tracker output: monitored contacts' presence history, the live WhatsApp Web
+# Chrome profile and the login QR screenshot must never be committed
+/data/
+/analytics/
+/qrcode.png
+
 # Excel temporary files
 ~$*.xlsx
 *.xlsx#
