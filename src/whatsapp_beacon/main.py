@@ -1,12 +1,13 @@
 import argparse
 import sys
 from pathlib import Path
-from .analytics import AnalyticsDashboard
 from .config import Config
-from .beacon import WhatsAppBeacon
 from .database import Database
-from .db_to_excel import export_json
 from .logger import setup_logging
+
+# The analytics, export and tracker modules are imported inside their branches:
+# beacon pulls in Selenium and db_to_excel pulls in openpyxl, together ~85% of
+# CLI startup, and only the tracking path needs them.
 
 def _printable(value: object) -> str:
     """Return *value* with terminal control characters removed.
@@ -50,12 +51,14 @@ def main():
     db_path = Path(config.data_dir) / 'victims_logs.db'
 
     if args.analytics:
+        from .analytics import AnalyticsDashboard
         dashboard = AnalyticsDashboard(db_path=str(db_path), output_file=args.analytics_output)
         output_path = dashboard.export()
         print(f"Analytics dashboard written to {output_path}")
         sys.exit(0)
 
     if args.export_json:
+        from .db_to_excel import export_json
         output_path = export_json(db_path=str(db_path), output_path=args.export_json)
         print(f"JSON export written to {output_path}")
         sys.exit(0)
@@ -81,6 +84,7 @@ def main():
         parser.print_help()
         sys.exit(1)
 
+    from .beacon import WhatsAppBeacon
     beacon = WhatsAppBeacon(config)
     beacon.run()
 
