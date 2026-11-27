@@ -45,11 +45,7 @@ def test_fixtures_available(temp_dir, mock_database, sample_config):
 @pytest.mark.unit
 def test_coverage_configuration():
     """Verify coverage is configured correctly."""
-    try:
-        import coverage
-        assert True, "Coverage module is available"
-    except ImportError:
-        pytest.skip("Coverage not yet installed")
+    pytest.importorskip("coverage")
 
 
 @pytest.mark.unit
