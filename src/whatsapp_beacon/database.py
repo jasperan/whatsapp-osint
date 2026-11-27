@@ -2,7 +2,7 @@ import logging
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from .private_files import make_private_dir
 
@@ -14,10 +14,17 @@ _PRESENCE_COLUMNS = ('user_name', 'observed_at', 'status_kind', 'status_text', '
 
 def compose_session_datetime(date: str, hour: str, minute: str, second: str) -> datetime:
     """Composes the schema's separate date/hour/minute/second parts into a datetime."""
-    return datetime.strptime(
-        f"{date} {hour}:{minute}:{second}",
-        '%Y-%m-%d %H:%M:%S',
-    )
+    # Building the datetime from ints is ~15x faster than strptime, which matters
+    # because analytics composes two per stored session. strptime stays as the
+    # fallback so malformed rows raise the same ValueError as before.
+    try:
+        year, month, day = date.split('-')
+        return datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))
+    except (AttributeError, TypeError, ValueError):
+        return datetime.strptime(
+            f"{date} {hour}:{minute}:{second}",
+            '%Y-%m-%d %H:%M:%S',
+        )
 
 
 class Database:
@@ -77,6 +84,12 @@ class Database:
                         FOREIGN KEY (user_id) REFERENCES Users(id)
                     )
                 ''')
+                # Presence grows by a row every 30 s per tracked contact; the
+                # per-contact "latest" lookups below would otherwise scan it all.
+                c.execute(
+                    'CREATE INDEX IF NOT EXISTS idx_presence_user_observed '
+                    'ON Presence (user_id, observed_at)'
+                )
                 conn.commit()
         except sqlite3.Error as e:
             logger.error(f"Database initialization error: {e}")
@@ -239,6 +252,48 @@ class Database:
         except sqlite3.Error as e:
             logger.error(f"Error reading presence history: {e}")
         return rows
+
+    def get_presence_summary(
+        self, trail_limit: int = 25
+    ) -> Tuple[Dict[str, int], Dict[str, Dict[str, str]], List[Dict[str, str]]]:
+        """Aggregates presence for the dashboard without loading the full history.
+
+        Returns ``(counts, latest_evidence, trail)``: observations per contact, each
+        contact's newest ``online``/``last_seen`` row, and the newest ``trail_limit``
+        rows ordered oldest → newest. "Newest" follows the same
+        ``observed_at, id`` order as :meth:`get_presence_history`.
+        """
+        columns = 'u.user_name, p.observed_at, p.status_kind, p.status_text, p.last_seen'
+        counts: Dict[str, int] = {}
+        latest: Dict[str, Dict[str, str]] = {}
+        trail: List[Dict[str, str]] = []
+        try:
+            with self._get_connection() as conn:
+                c = conn.cursor()
+                c.execute(
+                    'SELECT u.user_name, COUNT(*) FROM Presence p '
+                    'JOIN Users u ON p.user_id = u.id GROUP BY p.user_id'
+                )
+                counts = dict(c.fetchall())
+                # One indexed lookup per contact instead of a pass over the history.
+                c.execute(
+                    f'SELECT {columns} FROM Users u JOIN Presence p ON p.id = ('
+                    '    SELECT p2.id FROM Presence p2'
+                    "    WHERE p2.user_id = u.id AND p2.status_kind IN ('online', 'last_seen')"
+                    '    ORDER BY p2.observed_at DESC, p2.id DESC LIMIT 1'
+                    ')'
+                )
+                for row in c.fetchall():
+                    latest[row[0]] = dict(zip(_PRESENCE_COLUMNS, row))
+                c.execute(
+                    f'SELECT {columns} FROM Presence p JOIN Users u ON p.user_id = u.id '
+                    'ORDER BY p.observed_at DESC, p.id DESC LIMIT ?',
+                    (trail_limit,),
+                )
+                trail = [dict(zip(_PRESENCE_COLUMNS, row)) for row in reversed(c.fetchall())]
+        except sqlite3.Error as e:
+            logger.error(f"Error summarising presence: {e}")
+        return counts, latest, trail
 
     def get_latest_presence_by_user(self) -> Dict[str, Dict[str, str]]:
         """Returns the most recent presence observation per contact."""

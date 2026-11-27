@@ -144,3 +144,35 @@ def test_get_latest_presence_by_user_uses_single_row_per_user(db):
     assert set(latest) == {'Alice', 'Bob'}
     assert latest['Alice']['observed_at'] == '2026-08-14 08:00:00'
     assert latest['Bob']['status_kind'] == 'typing'
+
+
+def test_presence_summary_counts_latest_evidence_and_trail(db):
+    alice = db.get_or_create_user('Alice')
+    bob = db.get_or_create_user('Bob')
+    db.get_or_create_user('Quiet')
+    # Inserted out of observed_at order: "latest" must follow observed_at, not id.
+    db.insert_presence(alice, '2025-03-02 09:00:00', 'online', 'online')
+    db.insert_presence(alice, '2025-03-02 08:00:00', 'last_seen', 'last seen today at 07:45', '2025-03-02 07:45:00')
+    db.insert_presence(alice, '2025-03-02 10:00:00', 'typing', 'typing…')
+    db.insert_presence(bob, '2025-03-01 12:00:00', 'other', 'busy')
+
+    counts, latest, trail = db.get_presence_summary(trail_limit=3)
+
+    assert counts == {'Alice': 3, 'Bob': 1}
+    # typing/other rows are not evidence; Bob has none, Quiet has no rows at all.
+    assert set(latest) == {'Alice'}
+    assert latest['Alice']['status_kind'] == 'online'
+    assert [row['observed_at'] for row in trail] == [
+        '2025-03-02 08:00:00', '2025-03-02 09:00:00', '2025-03-02 10:00:00',
+    ]
+
+
+def test_compose_session_datetime_accepts_unpadded_and_rejects_garbage():
+    from datetime import datetime
+    from src.whatsapp_beacon.database import compose_session_datetime
+
+    assert compose_session_datetime('2026-8-4', '7', '5', '9') == datetime(2026, 8, 4, 7, 5, 9)
+    with pytest.raises(ValueError):
+        compose_session_datetime('2026-08-14', '25', '00', '00')
+    with pytest.raises(ValueError):
+        compose_session_datetime(None, '07', '05', '09')

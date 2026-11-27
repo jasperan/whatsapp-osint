@@ -74,15 +74,15 @@ class AnalyticsDashboard:
                 })
         return sessions
 
-    def _load_presence(self) -> List[Dict[str, Any]]:
-        """Loads presence observations (oldest → newest), joined with contacts.
+    def _load_presence_summary(self):
+        """Presence counts, latest evidence and the 25-row trail, aggregated in SQL.
 
-        Delegates to :meth:`Database.get_presence_history` so the query and
-        row shape stay defined in exactly one place.
+        See :meth:`Database.get_presence_summary`; the dashboard never needs the
+        full presence history, which grows by a row every 30 s per tracked contact.
         """
         if not self.db_path.exists():
-            return []
-        return Database(str(self.db_path)).get_presence_history()
+            return {}, {}, []
+        return Database(str(self.db_path)).get_presence_summary(trail_limit=25)
 
     @staticmethod
     def _regularity_score(sessions: List[Dict[str, Any]]) -> Optional[int]:
@@ -176,13 +176,9 @@ class AnalyticsDashboard:
 
         # Presence intelligence: per-contact last-seen evidence, observation
         # counts, and a schedule-regularity estimate derived from session starts.
-        presence_list = self._load_presence()
-        presence_trail = presence_list[-25:]
+        presence_counts, latest_evidence, presence_trail = self._load_presence_summary()
         latest_presence_label: Dict[str, str] = {}
-        presence_counts: Dict[str, int] = {}
-        for row in presence_list:
-            name = row['user_name']
-            presence_counts[name] = presence_counts.get(name, 0) + 1
+        for name, row in latest_evidence.items():
             if row['status_kind'] == 'online':
                 latest_presence_label[name] = f"Online {row['observed_at']}"
             elif row['status_kind'] == 'last_seen':
