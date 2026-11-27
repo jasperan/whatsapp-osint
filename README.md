@@ -1,6 +1,7 @@
 # 🕵️‍♂️ WhatsApp Beacon (OSINT Tracker)
 
 [![PyPI](https://img.shields.io/pypi/v/whatsapp-osint?style=for-the-badge&logo=pypi&logoColor=white)](https://pypi.org/project/whatsapp-osint/)
+[![CI](https://img.shields.io/github/actions/workflow/status/jasperan/whatsapp-osint/ci.yml?branch=master&style=for-the-badge&label=CI)](https://github.com/jasperan/whatsapp-osint/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey?style=for-the-badge)
@@ -239,7 +240,7 @@ Same dashboard, narrowed to one contact to show the live filter state.
 | Argument | Description | Default |
 |----------|-------------|---------|
 | `-u`, `--username` | Exact WhatsApp contact name to track. | Required for tracking |
-| `-l`, `--language` | WhatsApp Web language code (`en`, `es`, `fr`, etc.). | `en` |
+| `-l`, `--language` | WhatsApp Web UI language: `en`, `es`, `de`, `fr`, `it`, `pt`, `cat` or `tr`. | `en` |
 | `-e`, `--excel` | Export the database to `History_wp.xlsx`. Without `-u` it exports and exits (no browser needed); with `-u` it exports, then starts tracking. | `False` |
 | `--headless` | Run without a visible browser window. | `False` |
 | `--chrome-driver-path` | Explicit path to `chromedriver`. | Auto-detect |
@@ -261,11 +262,13 @@ username: "Target Name"
 language: "en"
 headless: false
 excel: false
-browser: "chrome"
 log_level: "INFO"
 data_dir: "data"
+chrome_driver_path: null
 chrome_binary_path: null
 ```
+
+Command-line flags override the file. Only Chrome/Chromium is supported.
 
 ---
 

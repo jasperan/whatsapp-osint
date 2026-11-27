@@ -16,8 +16,6 @@ class Config:
             'language': 'en',
             'excel': False,
             'headless': False,
-            'split_char': '-',
-            'browser': 'chrome',
             'log_level': 'INFO',
             'data_dir': 'data',
             'chrome_driver_path': None,
