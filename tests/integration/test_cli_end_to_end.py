@@ -106,3 +106,13 @@ def test_cli_last_seen_empty_database(tmp_path, capsys, monkeypatch):
 
     out = _run_cli(['--config', str(config_path), '--last-seen'], capsys)
     assert 'No presence data recorded yet.' in out
+
+
+def test_cli_excel_without_username_exports_and_exits(tmp_path, capsys, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    config_path = _seed(tmp_path)
+
+    out = _run_cli(['--config', str(config_path), '--excel'], capsys)
+
+    assert 'Excel export written to History_wp.xlsx' in out
+    assert (tmp_path / 'History_wp.xlsx').exists()
