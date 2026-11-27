@@ -256,3 +256,25 @@ def test_status_text_from_returns_text_or_empty(config):
 
     beacon.driver.find_element.side_effect = NoSuchElementException('gone')
     assert beacon._status_text_from('//span') == ''
+
+
+def test_status_probe_does_not_block_the_polling_loop(config):
+    """With no status subtitle on the page, one probe is a single pass, not a wait."""
+    from selenium.common.exceptions import NoSuchElementException
+    from src.whatsapp_beacon.beacon import _STATUS_XPATHS
+    beacon = WhatsAppBeacon(config)
+    beacon.driver = MagicMock()
+    beacon.driver.find_element.side_effect = NoSuchElementException("absent")
+
+    with patch('src.whatsapp_beacon.beacon.time.sleep') as sleep:
+        assert beacon._read_status_text() == ''
+
+    sleep.assert_not_called()
+    assert beacon.driver.find_element.call_count == len(_STATUS_XPATHS)
+
+
+def test_find_first_present_zero_timeout_checks_once(config):
+    beacon = WhatsAppBeacon(config)
+    beacon.driver = MagicMock()
+    beacon.driver.find_element.return_value = "Element"
+    assert beacon._find_first_present(['//a', '//b'], timeout=0) == '//a'
