@@ -49,3 +49,18 @@ def test_last_seen_output_contains_no_control_characters(tmp_path, capsys, monke
     # The visible text must survive: sanitising must not be "drop the whole line".
     assert 'PWNED' in out
     assert 'Evil' in out and 'Contact' in out
+
+
+def test_cli_import_does_not_load_selenium_or_openpyxl():
+    """The no-browser commands must not pay for Selenium/openpyxl at startup."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    code = (
+        "import sys, src.whatsapp_beacon.main; "
+        "print(sorted(m for m in ('selenium', 'openpyxl') if m in sys.modules))"
+    )
+    root = Path(__file__).resolve().parents[2]
+    out = subprocess.run([sys.executable, '-c', code], cwd=root, capture_output=True, text=True, check=True)
+    assert out.stdout.strip() == '[]'
