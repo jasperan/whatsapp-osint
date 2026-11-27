@@ -86,13 +86,14 @@ PROJECT_DIR=/opt/whatsapp-osint curl -fsSL https://raw.githubusercontent.com/jas
 
 Use this only if you explicitly want to manage setup yourself.
 
+Requires [uv](https://docs.astral.sh/uv/).
+
 ```bash
 git clone https://github.com/jasperan/whatsapp-osint.git
 cd whatsapp-osint
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip setuptools wheel
-python -m pip install -e ".[dev]"
+uv sync                       # creates .venv with the package and the dev tools
+uv run pytest                 # run the test suite
+uv run whatsapp-beacon --help
 ```
 
 </details>

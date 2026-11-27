@@ -10,9 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Install (development)
 ```bash
-conda create -n whatsapp-osint python=3.12
-conda activate whatsapp-osint
-pip install -e ".[dev]"
+uv sync    # package + dev dependency group into .venv
 ```
 
 ### One-command installer (end-users)
@@ -23,22 +21,22 @@ curl -fsSL https://raw.githubusercontent.com/jasperan/whatsapp-osint/master/inst
 
 ### Run
 ```bash
-# Module invocation (recommended during development)
-python3 -m src.whatsapp_beacon.main -u "Contact Name"
+# From the checkout
+uv run whatsapp-beacon -u "Contact Name"
 
 # With options
-python3 -m src.whatsapp_beacon.main -u "Contact Name" -l es --headless
+uv run whatsapp-beacon -u "Contact Name" -l es --headless
 
 # Generate analytics dashboard (writes analytics/index.html)
-python3 -m src.whatsapp_beacon.main --analytics
+uv run whatsapp-beacon --analytics
 
 # Export to Excel
-python3 -m src.whatsapp_beacon.main -u "Contact Name" --excel
+uv run whatsapp-beacon -u "Contact Name" --excel
 
 # Passive presence queries (no browser needed):
-python3 -m src.whatsapp_beacon.main --last-seen
-python3 -m src.whatsapp_beacon.main -u "Contact Name" --last-seen
-python3 -m src.whatsapp_beacon.main --export-json export.json
+uv run whatsapp-beacon --last-seen
+uv run whatsapp-beacon -u "Contact Name" --last-seen
+uv run whatsapp-beacon --export-json export.json
 
 # After pip install (two aliases registered):
 whatsapp-beacon -u "Contact Name"
@@ -47,10 +45,10 @@ whatsapp-osint -u "Contact Name"
 
 ### Tests
 ```bash
-pytest                                                    # all tests
-pytest tests/unit/test_beacon.py                          # single file
-pytest tests/unit/test_beacon.py::TestClassName::test_x  # single test
-coverage run -m pytest && coverage report                 # with coverage
+uv run pytest                                                    # all tests
+uv run pytest tests/unit/test_beacon.py                          # single file
+uv run pytest tests/unit/test_beacon.py::TestClassName::test_x  # single test
+uv run coverage run -m pytest && uv run coverage report          # with coverage
 ```
 
 ## Architecture
@@ -83,7 +81,7 @@ All of these hold monitored contacts' data and are gitignored; never commit them
 Chrome session is persisted in `data/chrome_profile`. First run must be non-headless to scan the WhatsApp QR code. Subsequent runs (including `--headless`) reuse the saved session. If the session expires, delete `data/chrome_profile/` and re-scan.
 
 ### Supported browsers
-`config.yaml` `browser` key accepts `chrome`, `firefox`, or `edge`. ChromeDriver is auto-managed by `webdriver-manager`; Firefox requires geckodriver on PATH.
+Only Chrome/Chromium is implemented. ChromeDriver comes from `--chrome-driver-path`, a `chromedriver` on PATH, or Selenium Manager, in that order.
 
 ### Adding a New Language
 Add an entry to the `ONLINE_STATUS` dict in `beacon.py` with the ISO language code and the localized "online" string as it appears in WhatsApp Web. For "last seen" parsing, also add matching entries to `ONLINE_WORDS`, `LAST_SEEN_STEMS`, `TODAY_WORDS`, and `YESTERDAY_WORDS` in `presence.py`.
@@ -100,9 +98,8 @@ WhatsApp Web updates its DOM periodically. When selectors break, update the thre
 Prefer `data-testid` and `aria-label` attributes over positional XPaths; they survive layout changes better.
 
 ## Key Dependencies
-- `selenium` + `webdriver-manager` — browser automation (ChromeDriver auto-managed)
-- `keyboard` — hotkey listener (used in polling loop)
+- `selenium` — browser automation (Selenium Manager resolves ChromeDriver)
 - `pyyaml` — `config.yaml` parsing
 - `openpyxl` — Excel export
 - `colorlog` — colored console logging
-- `pytest` + `pytest-mock` + `coverage` — testing (dev extras)
+- `pytest` + `pytest-mock` + `coverage` — testing (`dev` dependency group)

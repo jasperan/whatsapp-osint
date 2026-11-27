@@ -32,13 +32,11 @@ classifiers = [
 dependencies = [
   "selenium",
   "openpyxl",
-  "keyboard",
-  "webdriver-manager",
   "PyYAML",
   "colorlog",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
   "build",
   "coverage",
@@ -76,4 +74,3 @@ markers = [
   "slow: mark test as slow running",
 ]
 
-[tool.uv]
