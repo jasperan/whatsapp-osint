@@ -240,7 +240,7 @@ Same dashboard, narrowed to one contact to show the live filter state.
 |----------|-------------|---------|
 | `-u`, `--username` | Exact WhatsApp contact name to track. | Required for tracking |
 | `-l`, `--language` | WhatsApp Web language code (`en`, `es`, `fr`, etc.). | `en` |
-| `-e`, `--excel` | Export the database to Excel before doing anything else. | `False` |
+| `-e`, `--excel` | Export the database to `History_wp.xlsx`. Without `-u` it exports and exits (no browser needed); with `-u` it exports, then starts tracking. | `False` |
 | `--headless` | Run without a visible browser window. | `False` |
 | `--chrome-driver-path` | Explicit path to `chromedriver`. | Auto-detect |
 | `--chrome-binary-path` | Explicit path to Chrome or Chromium. | Auto-detect |

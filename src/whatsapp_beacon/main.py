@@ -79,6 +79,17 @@ def main():
             )
         sys.exit(0)
 
+    if config.excel and not config.username:
+        # Export-only run: no contact to track, so do not start a browser.
+        if not db_path.exists():
+            print(f"No database at {db_path}. Run the tracker once to start collecting.")
+            sys.exit(1)
+        from .db_to_excel import Converter
+        converter = Converter(db_path=str(db_path))
+        converter.db_to_excel()
+        print(f"Excel export written to {converter.excel_file}")
+        sys.exit(0)
+
     if not config.username:
         print("Error: Username is required. Set it in config.yaml or use --username.")
         parser.print_help()
