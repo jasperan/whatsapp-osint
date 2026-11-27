@@ -55,7 +55,7 @@ uv run coverage run -m pytest && uv run coverage report          # with coverage
 
 Package lives in `src/whatsapp_beacon/`:
 
-- **`config.py` (`Config`)**: Settings loaded in priority order: defaults → `config.yaml` → CLI args. Key config keys: `username`, `language`, `headless`, `excel`, `browser`, `log_level`, `data_dir`, `chrome_binary_path`, `split_char`. No env var support yet.
+- **`config.py` (`Config`)**: Settings loaded in priority order: defaults → `config.yaml` → CLI args. Key config keys: `username`, `language`, `headless`, `excel`, `log_level`, `data_dir`, `chrome_driver_path`, `chrome_binary_path`. No env var support yet.
 - **`beacon.py` (`WhatsAppBeacon`)**: Core class. Manages Selenium driver, WhatsApp Web login, contact search, and the polling loop. Multi-language online status detection via `ONLINE_STATUS` dict (en/de/pt/es/fr/it/cat/tr).
 - **`database.py` (`Database`)**: SQLite wrapper. Three tables: `Users` (user_name), `Sessions` (start/end timestamps, duration), and `Presence` (passive presence observations: observed_at, status_kind, status_text, last_seen). Timestamps split across separate date/hour/minute/second columns, not a single column. `close_open_sessions()` closes sessions orphaned by a crashed/killed run at next startup.
 - **`analytics.py` (`AnalyticsDashboard`)**: Reads Sessions+Users, computes per-contact stats, and renders a self-contained HTML dashboard to `analytics/index.html`. Handles in-progress sessions (NULL end_date) by substituting current time. Also ingests the `Presence` table: per-contact last-seen labels, presence observation counts, a schedule-regularity score (0-100, std of daily first-session starts), and a "presence trail" panel in the dashboard.
