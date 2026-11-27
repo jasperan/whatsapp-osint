@@ -34,8 +34,7 @@ def test_setup_driver(config, mock_driver, mock_resolve_chromedriver):
     # Check if headless options were added
     args, kwargs = mock_driver.call_args
     options = kwargs['options']
-    # We can't easily inspect C++ objects (ChromeOptions) deeply in mocks easily without more work,
-    # but we verify the call happened.
+    assert '--headless=new' in options.arguments
 
 def test_whatsapp_login_headless(config, mock_driver, mock_resolve_chromedriver):
     beacon = WhatsAppBeacon(config)
@@ -45,15 +44,12 @@ def test_whatsapp_login_headless(config, mock_driver, mock_resolve_chromedriver)
     driver_instance = mock_driver.return_value
     beacon.driver = driver_instance
 
-    # Simulate Login Success
-    # We need to mock WebDriverWait to return True immediately
-    with patch('src.whatsapp_beacon.beacon.WebDriverWait') as mock_wait:
-         # Mocking the presence_of_element_located check
-         mock_wait.return_value.until.return_value = True
+    # The MagicMock driver finds every login XPath, so login succeeds at once;
+    # skip the headless render pause.
+    with patch('src.whatsapp_beacon.beacon.time.sleep'):
+        beacon.whatsapp_login()
 
-         beacon.whatsapp_login()
-
-         driver_instance.get.assert_called_with('https://web.whatsapp.com')
+    driver_instance.get.assert_called_with('https://web.whatsapp.com')
 
 def test_check_online_status_true(config, mock_driver):
     beacon = WhatsAppBeacon(config)
