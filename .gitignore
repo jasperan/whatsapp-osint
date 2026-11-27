@@ -178,6 +178,9 @@ test_*.db
 # Chrome profile and the login QR screenshot must never be committed
 /data/
 /analytics/
+/logs/
+/database/
+/History_wp.xlsx
 /qrcode.png
 
 # Excel temporary files
