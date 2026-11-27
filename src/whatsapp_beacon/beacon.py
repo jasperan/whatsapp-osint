@@ -119,17 +119,19 @@ class WhatsAppBeacon:
         """
         Poll the page until one of the given XPaths is present.
         Returns the matching XPath string, or None if the timeout expires.
+        Always makes at least one pass, so ``timeout=0`` is a single check.
         """
         deadline = time.time() + timeout
-        while time.time() < deadline:
+        while True:
             for xpath in xpaths:
                 try:
                     if self.driver.find_element(By.XPATH, xpath):
                         return xpath
                 except (NoSuchElementException, WebDriverException):
                     pass
+            if time.time() >= deadline:
+                return None
             time.sleep(0.5)
-        return None
 
     def find_user_chat(self, user: str) -> bool:
         """Search and goes to the user's chat"""
@@ -364,14 +366,16 @@ class WhatsAppBeacon:
             # Cached xpath went stale (element disappeared); re-probe below.
             self._last_status_xpath = None
 
-        # No cached xpath (or it went stale). Re-probe, but at most every 10s
-        # so a DOM change cannot stall the 1-second polling loop.
+        # No cached xpath (or it went stale). Re-probe at most every 10s, with a
+        # single pass instead of a wait: the probe runs inside the 1-second
+        # online-polling loop, and a contact who hides "last seen" never shows
+        # a subtitle, so any wait here is time the tracker is blind.
         now = time.time()
         if now - self._last_status_probe_ts < 10:
             return ''
         self._last_status_probe_ts = now
 
-        found = self._find_first_present(_STATUS_XPATHS, timeout=3)
+        found = self._find_first_present(_STATUS_XPATHS, timeout=0)
         if not found:
             return ''
         self._last_status_xpath = found
