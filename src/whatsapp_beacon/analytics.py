@@ -6,7 +6,7 @@ import sqlite3
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .database import Database, compose_session_datetime
 from .private_files import create_private_file, make_private_dir
