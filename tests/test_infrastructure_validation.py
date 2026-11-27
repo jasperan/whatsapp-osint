@@ -65,8 +65,6 @@ def test_project_structure():
     package_root = project_root / 'src' / 'whatsapp_beacon'
 
     assert (project_root / 'pyproject.toml').exists()
-    assert (project_root / 'setup.py').exists()
-    assert (project_root / 'requirements.txt').exists()
     assert package_root.is_dir()
     assert (package_root / '__init__.py').exists()
     assert (package_root / 'beacon.py').exists()
@@ -75,14 +73,12 @@ def test_project_structure():
 
 @pytest.mark.integration
 def test_packaging_configuration():
-    """Verify setuptools and requirements metadata are present and current."""
+    """Verify the pyproject packaging metadata is present and current."""
     project_root = Path(__file__).parent.parent
     pyproject_path = project_root / 'pyproject.toml'
-    requirements_path = project_root / 'requirements.txt'
     readme_path = project_root / 'README.md'
 
     assert pyproject_path.exists()
-    assert requirements_path.exists()
     assert readme_path.exists()
 
     pyproject_content = pyproject_path.read_text()
@@ -91,10 +87,8 @@ def test_packaging_configuration():
     assert 'whatsapp-osint = "whatsapp_beacon.main:main"' in pyproject_content
     assert 'version = { attr = "whatsapp_beacon.__version__" }' in pyproject_content
 
-    requirements_content = requirements_path.read_text()
-    assert 'selenium' in requirements_content
-    assert 'webdriver-manager' in requirements_content
-    assert 'pytest' in requirements_content
+    assert '"selenium"' in pyproject_content
+    assert '[dependency-groups]' in pyproject_content
 
     readme_content = readme_path.read_text()
     assert 'pypi/v/whatsapp-osint' in readme_content
